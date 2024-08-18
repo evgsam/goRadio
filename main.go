@@ -11,9 +11,6 @@ import (
 	"go.bug.st/serial"
 )
 
-/*
-}
-*/
 func printByte(data []byte) {
 	for _, value := range data {
 		fmt.Printf("%#x ", value)
@@ -98,7 +95,7 @@ func setFreque(freque int) []byte {
 
 func main() {
 
-	myic78civCommand := ic78civCmd.Ic78civCommand()
+	myic78civCommand := ic78civCmd.NewIc78civCommand(0x62, 0xe1)
 	fmt.Println(ic78civCmd.GetTransiverAddr(myic78civCommand))
 
 	fmt.Println(setFreque(35694))

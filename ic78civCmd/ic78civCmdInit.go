@@ -3,7 +3,7 @@ package ic78civCmd
 type civCommand struct {
 	preamble          [2]byte
 	transiverAddr     byte
-	ControllerAddr    byte
+	controllerAddr    byte
 	setFrequeCommand  byte
 	readFrequeCommand byte
 	subcodeNumber     byte
@@ -12,11 +12,11 @@ type civCommand struct {
 	ngCode            byte
 }
 
-func Ic78civCommand() *civCommand {
+func NewIc78civCommand(transiverAddr byte, controllerAddr byte) *civCommand {
 	ic78civCommand := &civCommand{
 		preamble:         [2]byte{0xfe, 0xfe},
-		transiverAddr:    0x62,
-		ControllerAddr:   0xe1,
+		transiverAddr:    transiverAddr,
+		controllerAddr:   controllerAddr,
 		setFrequeCommand: 0x05,
 		endMsg:           0xfd,
 		okCode:           0xfb,
