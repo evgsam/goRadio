@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"goRadio/ic78civCmd"
+	"goRadio/serialDataExchange"
 	"log"
-	"serial"
 	"time"
 
 	"go.bug.st/serial"
@@ -46,7 +46,7 @@ func main() {
 	//frequeCommand2 := []byte{0xfe, 0xfe, 0x62, 0xe1, 0x15, 0x02, 0xfd}
 	answerOk := []byte{0xfe, 0xfe, 0xe1, 0x62, 0xfb, 0xfd}
 
-	port = OpenSerialPort()
+	port = serialDataExchange.OpenSerialPort()
 	for attemptСount <= 100 {
 		//	writeSerialPort(port, []byte{myic78civCommand.preamble[0], myic78civCommand.preamble[1], myic78civCommand.transiverAddr, myic78civCommand.controllerAddr, 0x19, 0x00, myic78civCommand.endMsg})
 		fmt.Print("TX:")
