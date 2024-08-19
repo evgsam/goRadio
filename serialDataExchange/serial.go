@@ -7,7 +7,7 @@ import (
 	"go.bug.st/serial"
 )
 
-func OpenSerialPort() serial.Port {
+func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
 	ports, err := serial.GetPortsList()
 	var portsnum int
 	if err != nil {
@@ -29,9 +29,9 @@ func OpenSerialPort() serial.Port {
 		portsnum = 0
 	}
 	mode := &serial.Mode{
-		BaudRate: 19200,
+		BaudRate: BaudRate,
 		Parity:   serial.NoParity,
-		DataBits: 8,
+		DataBits: int(DataBits),
 		StopBits: serial.OneStopBit,
 	}
 	port, err := serial.Open(ports[portsnum], mode)
@@ -39,4 +39,19 @@ func OpenSerialPort() serial.Port {
 		log.Fatal(err)
 	}
 	return port
+}
+
+func ReadSerialPort(port serial.Port, buff []byte) int {
+	n, err := port.Read(buff)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return n
+}
+
+func WriteSerialPort(port serial.Port, buff []byte) {
+	_, err := port.Write(buff)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
