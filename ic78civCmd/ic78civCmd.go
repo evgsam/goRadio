@@ -67,16 +67,37 @@ func requestTransmitterAddr(port serial.Port, p *civCommand) {
 	//	sendBuf := []byte{p.preamble, p.preamble, 0x00, p.controllerAddr, p.readTransiverAddr, 0x00, p.endMsg}
 	//	serialDataExchange.WriteSerialPort(port, sendBuf)
 	//	_ = serialDataExchange.ReadSerialPort(port, buff)
-
-	buff := []byte{0xfe, 0xfe, 0x00, 0xe1, 0x19, 0x00, 0xfd, 0xfe, 0xfe, 0xe1, 0x62, 0x19, 0x62, 0xfd, 0x00, 0x00, 0x00, 0x00}
+	n := 0
+	request := []byte{0xfe, 0xfe, 0x00, 0xe1, 0x19, 0x00, 0xfd}
+	buff := []byte{0xfe, 0xfe, 0x00, 0xe1, 0x19, 0x00, 0xfd, 0xfe, 0xfe, 0x62, 0xe1, 0x19, 0x62, 0xfd, 0x00, 0x00, 0x00, 0x00}
 	//var buff1 []byte
 	buff1 := make([]byte, 0, 12)
-	idx := slices.Index(buff, p.endMsg)
-	if idx != -1 {
-		for i := 0; i < idx+1; i++ {
-			buff1 = append(buff1, buff[i])
+	//buff2 := make([]byte, 0, 12)
+	//buff1 := make([]byte, 0, 12)
+
+	for _, value := range buff {
+		if value == 0xfd {
+			n++
 		}
 	}
+	fmt.Println(n)
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		fmt.Println(idx + 1)
+		fmt.Println(len(request))
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], request[:len(request)]) {
+				fmt.Println("ECHO")
+				buff = buff[idx+1 : len(buff)]
+				fmt.Println("ECHO")
+			} else {
+				buff1 = buff[0 : idx+1]
+				buff = buff[idx+1 : len(buff)]
+			}
+
+		}
+	}
+
 	println(buff1)
 	//	idx := slices.IndexFunc(myconfig, func(c Config) bool { return c.Key == "key1" })
 
