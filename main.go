@@ -1,12 +1,9 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"goRadio/ic78civCmd"
 	"goRadio/serialDataExchange"
-	"log"
-	"time"
 
 	"go.bug.st/serial"
 )
@@ -18,36 +15,24 @@ func printByte(data []byte) {
 	fmt.Println()
 }
 
-func readSerialPort(port serial.Port, buff []byte) int {
-	n, err := port.Read(buff)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return n
-}
-
-func writeSerialPort(port serial.Port, buff []byte) {
-	_, err := port.Write(buff)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
 func main() {
-	myic78civCommand := ic78civCmd.NewIc78civCommand(0x62, 0xe1)
-	fmt.Println(ic78civCmd.GetTransiverAddr(myic78civCommand))
+	var port serial.Port
+
+	/*fmt.Println(ic78civCmd.GetTransiverAddr(myic78civCommand))
 	receiveOk := false
 	var nmbrByteRead int
 	var attemptСount int
-	var port serial.Port
+
 
 	connectCommand := []byte{0xfe, 0xfe, 0x62, 0xe1, 0x19, 0x00, 0xfd}
 	frequeCommand := []byte{0xfe, 0xfe, 0x62, 0xe1, 0x00, 0x50, 0x34, 0x12, 0x05, 0x00, 0xfd}
 	//frequeCommand2 := []byte{0xfe, 0xfe, 0x62, 0xe1, 0x15, 0x02, 0xfd}
 	answerOk := []byte{0xfe, 0xfe, 0xe1, 0x62, 0xfb, 0xfd}
-
-	port = serialDataExchange.OpenSerialPort()
-	for attemptСount <= 100 {
+	*/
+	port = serialDataExchange.OpenSerialPort(19200, 8)
+	fmt.Println(port)
+	ic78civCmd.IC78connect(port)
+	/*for attemptСount <= 100 {
 		//	writeSerialPort(port, []byte{myic78civCommand.preamble[0], myic78civCommand.preamble[1], myic78civCommand.transiverAddr, myic78civCommand.controllerAddr, 0x19, 0x00, myic78civCommand.endMsg})
 		fmt.Print("TX:")
 		printByte(connectCommand)
