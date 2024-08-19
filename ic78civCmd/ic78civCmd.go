@@ -1,38 +1,36 @@
 package ic78civCmd
 
-import "strconv"
+import (
+	"fmt"
+	"goRadio/serialDataExchange"
+	"strconv"
+
+	"go.bug.st/serial"
+)
 
 type civCommand struct {
-	preamble          [2]byte
+	preamble          byte
 	transiverAddr     byte
 	controllerAddr    byte
 	setFrequeCommand  byte
 	readFrequeCommand byte
-	subcodeNumber     byte
 	endMsg            byte
 	okCode            byte
 	ngCode            byte
 }
 
-func NewIc78civCommand(transiverAddr byte, controllerAddr byte) *civCommand {
+func newIc78civCommand(transiverAddr byte, controllerAddr byte) *civCommand {
 	ic78civCommand := &civCommand{
-		preamble:         [2]byte{0xfe, 0xfe},
-		transiverAddr:    transiverAddr,
-		controllerAddr:   controllerAddr,
-		setFrequeCommand: 0x05,
-		endMsg:           0xfd,
-		okCode:           0xfb,
-		ngCode:           0xfa,
+		preamble:          0xfe,
+		transiverAddr:     transiverAddr,
+		controllerAddr:    controllerAddr,
+		setFrequeCommand:  0x05,
+		readFrequeCommand: 0x03,
+		endMsg:            0xfd,
+		okCode:            0xfb,
+		ngCode:            0xfa,
 	}
 	return ic78civCommand
-}
-
-func GetCivPreamble(p *civCommand) []byte {
-	return p.preamble[:]
-}
-
-func GetTransiverAddr(p *civCommand) byte {
-	return p.transiverAddr
 }
 
 func addElementToFirstIndex(x []byte, y byte) []byte {
@@ -56,4 +54,22 @@ func SetFreque(freq int) {
 		buf[dig] = (arr[i] * 10) + arr[i+1]
 	}
 
+}
+
+func IC78connect(port serial.Port) {
+	buff := make([]byte, 11)
+	var nmbrByteRead int
+	myic78civCommand := newIc78civCommand(0x62, 0xe1)
+	serialDataExchange.WriteSerialPort(port, []byte{myic78civCommand.preamble, myic78civCommand.preamble, myic78civCommand.transiverAddr,
+		myic78civCommand.controllerAddr, myic78civCommand.readFrequeCommand, myic78civCommand.endMsg})
+	nmbrByteRead = serialDataExchange.ReadSerialPort(port, buff)
+
+	if nmbrByteRead == 0 {
+		fmt.Println("\nEOF")
+	}
+	if nmbrByteRead > 0 {
+		for _, value := range buff {
+			fmt.Printf("%#x ", value)
+		}
+	}
 }

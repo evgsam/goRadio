@@ -86,4 +86,5 @@ func main() {
 		}
 	}
 	fmt.Printf("\nreceiveOk=%v, attemptСount=%v \n", receiveOk, attemptСount)
+	*/
 }
