@@ -1,6 +1,7 @@
 package ic78civCmd
 
 import (
+	"bytes"
 	"fmt"
 	"goRadio/serialDataExchange"
 	"slices"
