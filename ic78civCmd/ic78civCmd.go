@@ -1,6 +1,7 @@
 package ic78civCmd
 
 import (
+	"bytes"
 	"fmt"
 	"goRadio/serialDataExchange"
 	"strconv"
@@ -14,18 +15,19 @@ type civCommand struct {
 	controllerAddr    byte
 	setFrequeCommand  byte
 	readFrequeCommand byte
+	readTransiverAddr byte
 	endMsg            byte
 	okCode            byte
 	ngCode            byte
 }
 
-func newIc78civCommand(transiverAddr byte, controllerAddr byte) *civCommand {
+func newIc78civCommand(controllerAddr byte) *civCommand {
 	ic78civCommand := &civCommand{
 		preamble:          0xfe,
-		transiverAddr:     transiverAddr,
 		controllerAddr:    controllerAddr,
 		setFrequeCommand:  0x05,
 		readFrequeCommand: 0x03,
+		readTransiverAddr: 0x19,
 		endMsg:            0xfd,
 		okCode:            0xfb,
 		ngCode:            0xfa,
@@ -56,20 +58,47 @@ func SetFreque(freq int) {
 
 }
 
-func IC78connect(port serial.Port) {
-	buff := make([]byte, 11)
-	var nmbrByteRead int
-	myic78civCommand := newIc78civCommand(0x62, 0xe1)
-	serialDataExchange.WriteSerialPort(port, []byte{myic78civCommand.preamble, myic78civCommand.preamble, myic78civCommand.transiverAddr,
-		myic78civCommand.controllerAddr, myic78civCommand.readFrequeCommand, myic78civCommand.endMsg})
-	nmbrByteRead = serialDataExchange.ReadSerialPort(port, buff)
+func requestTransmitterAddr(port serial.Port, p *civCommand) {
+	buff := make([]byte, 20)
+	sendBuf := []byte{p.preamble, p.preamble, 0x00, p.controllerAddr, p.readTransiverAddr, 0x00, p.endMsg}
+	serialDataExchange.WriteSerialPort(port, sendBuf)
+	_ = serialDataExchange.ReadSerialPort(port, buff)
 
-	if nmbrByteRead == 0 {
-		fmt.Println("\nEOF")
+	if bytes.Equal(buff[:len(sendBuf)], sendBuf[:len(sendBuf)]) {
+		fmt.Println("OK")
+	} else {
+		fmt.Println("ERROR")
 	}
-	if nmbrByteRead > 0 {
+
+	fmt.Println(buff[len(sendBuf)+1])
+	fmt.Println(buff[len(sendBuf)+2])
+	fmt.Println(buff[len(sendBuf)+3])
+
+	if buff[len(sendBuf)+1] == p.preamble && buff[len(sendBuf)+2] == p.preamble && buff[len(sendBuf)+3] == p.controllerAddr {
+		for i := len(sendBuf) + 1; i < len(buff); i++ {
+			if buff[i] == p.endMsg {
+				p.transiverAddr = buff[i-1]
+			}
+		}
+	}
+
+}
+
+func requestFreque(port serial.Port, p *civCommand) {
+	buff := make([]byte, 100)
+	serialDataExchange.WriteSerialPort(port, []byte{p.preamble, p.preamble, p.transiverAddr, p.controllerAddr, p.readFrequeCommand, p.endMsg})
+	n := serialDataExchange.ReadSerialPort(port, buff)
+	if n > 0 {
 		for _, value := range buff {
 			fmt.Printf("%#x ", value)
 		}
 	}
+
+}
+
+func IC78connect(port serial.Port) {
+	myic78civCommand := newIc78civCommand(0xe1)
+	requestTransmitterAddr(port, myic78civCommand)
+
+	//requestFreque(port, myic78civCommand)
 }
