@@ -47,7 +47,7 @@ func addElementToFirstIndex(x []byte, y byte) []byte {
 	return x
 }
 
-func SetFreque(freq int) {
+func setFreque(freq int) {
 	buf := make([]byte, 5)
 	arr := make([]byte, len(strconv.Itoa(freq)), 10)
 	for i := len(arr) - 1; freq > 0; i-- {
@@ -62,9 +62,15 @@ func SetFreque(freq int) {
 		dig--
 		buf[dig] = (arr[i] * 10) + arr[i+1]
 	}
+	println(buf)
 
 }
 
+/*
+func frqueToInt(freqBuff []byte) int {
+
+}
+*/
 func civDataParser(request []byte, buff []byte) {
 
 }
@@ -149,7 +155,9 @@ func requestFreque(port serial.Port, p *civCommand) []byte {
 }
 
 func IC78connect(port serial.Port) {
-	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
+	/*myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
 	fmt.Printf("Transiver Addr: %#x", myic78civCommand.transiverAddr)
 	fmt.Println(requestFreque(port, myic78civCommand))
+	*/
+	setFreque(30569)
 }
