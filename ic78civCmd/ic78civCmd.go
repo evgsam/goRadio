@@ -20,6 +20,7 @@ type civCommand struct {
 	endMsg            byte
 	okCode            byte
 	ngCode            byte
+	requestTAddres    []byte
 }
 
 func newIc78civCommand(controllerAddr byte) *civCommand {
@@ -32,6 +33,7 @@ func newIc78civCommand(controllerAddr byte) *civCommand {
 		endMsg:            0xfd,
 		okCode:            0xfb,
 		ngCode:            0xfa,
+		requestTAddres:    []byte{0xfe, 0xfe, 0x00, controllerAddr, 0x19, 0x00, 0xfd},
 	}
 	return ic78civCommand
 }
@@ -64,64 +66,50 @@ func civDataParser(request []byte, buff []byte) {
 }
 
 func requestTransmitterAddr(port serial.Port, p *civCommand) {
-	//buff := make([]byte, 20)
-	//	sendBuf := []byte{p.preamble, p.preamble, 0x00, p.controllerAddr, p.readTransiverAddr, 0x00, p.endMsg}
-	//	serialDataExchange.WriteSerialPort(port, sendBuf)
-	//	_ = serialDataExchange.ReadSerialPort(port, buff)
+	correctMsg := false
+	buff := make([]byte, 30)
+	cmdBuff := make([][]byte, 3)
+	for i := range cmdBuff {
+		cmdBuff[i] = make([]byte, 20)
+	}
 	n := 0
-	request := []byte{0xfe, 0xfe, 0x00, 0xe1, 0x19, 0x00, 0xfd}
-	buff := []byte{0xfe, 0xfe, 0x00, 0xe1, 0x19, 0x00, 0xfd, 0xfe, 0xfe, 0x62, 0xe1, 0x19, 0x62, 0xfd, 0x00, 0x00, 0x00, 0x00}
-	//var buff1 []byte
-	buff1 := make([]byte, 0, 12)
-	//buff2 := make([]byte, 0, 12)
-	//buff1 := make([]byte, 0, 12)
+	for !correctMsg {
+		serialDataExchange.WriteSerialPort(port, p.requestTAddres)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
 
 	for _, value := range buff {
 		if value == 0xfd {
 			n++
 		}
 	}
+		if n < 2 {
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
 	fmt.Println(n)
+	}
 	for i := 0; i < n; i++ {
 		idx := slices.Index(buff, p.endMsg)
+		idx2 := slices.Index(buff, p.preamble)
 		fmt.Println(idx + 1)
-		fmt.Println(len(request))
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], request[:len(request)]) {
+		fmt.Println(len(p.requestTAddres))
+		if idx != -1 && idx2 != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestTAddres[:len(p.requestTAddres)]) {
 				fmt.Println("ECHO")
 				buff = buff[idx+1 : len(buff)]
-				fmt.Println("ECHO")
 			} else {
-				buff1 = buff[0 : idx+1]
-				buff = buff[idx+1 : len(buff)]
+				//buff1 = buff[0 : idx+1]
+				cmdBuff[i] = buff[0 : idx+1]
+				//buff = buff[idx+1 : len(buff)]
 			}
 
 		}
 	}
+	println("END")
 
-	println(buff1)
-	//	idx := slices.IndexFunc(myconfig, func(c Config) bool { return c.Key == "key1" })
-
-	/*
-	   	if bytes.Equal(buff[:len(sendBuf)], sendBuf[:len(sendBuf)]) {
-	   		fmt.Println("OK")
-	   	} else {
-
-	   		fmt.Println("ERROR")
-	   	}
-
-	   fmt.Println(buff[len(sendBuf)+1])
-	   fmt.Println(buff[len(sendBuf)+2])
-	   fmt.Println(buff[len(sendBuf)+3])
-
-	   	if buff[len(sendBuf)+1] == p.preamble && buff[len(sendBuf)+2] == p.preamble && buff[len(sendBuf)+3] == p.controllerAddr {
-	   		for i := len(sendBuf) + 1; i < len(buff); i++ {
-	   			if buff[i] == p.endMsg {
-	   				p.transiverAddr = buff[i-1]
-	   			}
-	   		}
-	   	}
-	*/
 }
 
 func requestFreque(port serial.Port, p *civCommand) {
