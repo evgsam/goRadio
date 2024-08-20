@@ -37,7 +37,7 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 		okCode:            0xfb,
 		ngCode:            0xfa,
 		requestTAddres:    []byte{0xfe, 0xfe, 0x00, controllerAddr, 0x19, 0x00, 0xfd},
-		requestFreque:     []byte{0xfe, 0xfe, 0x00, controllerAddr, 0x19, 0x00, 0xfd},
+		requestFreque:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x03, 0xfd},
 	}
 	return ic78civCommand
 }
@@ -109,23 +109,14 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	return transiverAddr
 }
 
-func requestFreque(port serial.Port, p *civCommand) {
-	/*buff := make([]byte, 20)
-	serialDataExchange.WriteSerialPort(port, []byte{p.preamble, p.preamble, p.transiverAddr, p.controllerAddr, p.readFrequeCommand, p.endMsg})
-	n := serialDataExchange.ReadSerialPort(port, buff)
-	if n > 0 {
-		for _, value := range buff {
-			fmt.Printf("%#x ", value)
-		}
-	}
-	*/
-
+func requestFreque(port serial.Port, p *civCommand) []byte {
 	correctMsg := false
 	buff := make([]byte, 30)
+	freque := make([]byte, 5)
 	n := 0
 	for !correctMsg {
 		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestTAddres)
+		serialDataExchange.WriteSerialPort(port, p.requestFreque)
 		time.Sleep(time.Duration(10) * time.Millisecond)
 		_ = serialDataExchange.ReadSerialPort(port, buff)
 		for _, value := range buff {
@@ -145,22 +136,20 @@ func requestFreque(port serial.Port, p *civCommand) {
 	for i := 0; i < n; i++ {
 		idx := slices.Index(buff, p.endMsg)
 		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestTAddres[:len(p.requestTAddres)]) {
+			if bytes.Equal(buff[:idx+1], p.requestFreque[:len(p.requestFreque)]) {
 				fmt.Println("ECHO")
 				buff = buff[idx+1 : len(buff)]
 			} else {
-				p.transiverAddr = buff[idx-1]
+				freque = buff[idx-5 : idx]
 			}
 
 		}
 	}
-
+	return freque
 }
 
 func IC78connect(port serial.Port) {
-
 	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
-
 	fmt.Printf("Transiver Addr: %#x", myic78civCommand.transiverAddr)
-	//requestFreque(port, myic78civCommand)
+	fmt.Println(requestFreque(port, myic78civCommand))
 }
