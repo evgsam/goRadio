@@ -6,6 +6,7 @@ import (
 	"goRadio/serialDataExchange"
 	"slices"
 	"strconv"
+	"time"
 
 	"go.bug.st/serial"
 )
@@ -21,11 +22,13 @@ type civCommand struct {
 	okCode            byte
 	ngCode            byte
 	requestTAddres    []byte
+	requestFreque     []byte
 }
 
-func newIc78civCommand(controllerAddr byte) *civCommand {
+func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 	ic78civCommand := &civCommand{
 		preamble:          0xfe,
+		transiverAddr:     transiverAddr,
 		controllerAddr:    controllerAddr,
 		setFrequeCommand:  0x05,
 		readFrequeCommand: 0x03,
@@ -34,6 +37,7 @@ func newIc78civCommand(controllerAddr byte) *civCommand {
 		okCode:            0xfb,
 		ngCode:            0xfa,
 		requestTAddres:    []byte{0xfe, 0xfe, 0x00, controllerAddr, 0x19, 0x00, 0xfd},
+		requestFreque:     []byte{0xfe, 0xfe, 0x00, controllerAddr, 0x19, 0x00, 0xfd},
 	}
 	return ic78civCommand
 }
@@ -65,55 +69,48 @@ func civDataParser(request []byte, buff []byte) {
 
 }
 
-func requestTransmitterAddr(port serial.Port, p *civCommand) {
+func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
+	requestTAddres := []byte{0xfe, 0xfe, 0x00, controllerAdr, 0x19, 0x00, 0xfd}
 	correctMsg := false
 	buff := make([]byte, 30)
-	cmdBuff := make([][]byte, 3)
-	for i := range cmdBuff {
-		cmdBuff[i] = make([]byte, 20)
-	}
+	var transiverAddr byte
 	n := 0
 	for !correctMsg {
-		serialDataExchange.WriteSerialPort(port, p.requestTAddres)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, requestTAddres)
+		time.Sleep(time.Duration(10) * time.Millisecond)
 		_ = serialDataExchange.ReadSerialPort(port, buff)
-
 		for _, value := range buff {
 			if value == 0xfd {
 				n++
 			}
 		}
 		if n < 2 {
+			n = 0
 			for i, _ := range buff {
 				buff[i] = 0x00
 			}
 		} else {
 			correctMsg = true
 		}
-		fmt.Println(n)
 	}
 	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		idx2 := slices.Index(buff, p.preamble)
-		fmt.Println(idx + 1)
-		fmt.Println(len(p.requestTAddres))
-		if idx != -1 && idx2 != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestTAddres[:len(p.requestTAddres)]) {
+		idx := slices.Index(buff, 0xfd)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], requestTAddres[:len(requestTAddres)]) {
 				fmt.Println("ECHO")
 				buff = buff[idx+1 : len(buff)]
 			} else {
-				//buff1 = buff[0 : idx+1]
-				cmdBuff[i] = buff[0 : idx+1]
-				//buff = buff[idx+1 : len(buff)]
+				transiverAddr = buff[idx-1]
 			}
 
 		}
 	}
-	println("END")
-
+	return transiverAddr
 }
 
 func requestFreque(port serial.Port, p *civCommand) {
-	buff := make([]byte, 100)
+	/*buff := make([]byte, 20)
 	serialDataExchange.WriteSerialPort(port, []byte{p.preamble, p.preamble, p.transiverAddr, p.controllerAddr, p.readFrequeCommand, p.endMsg})
 	n := serialDataExchange.ReadSerialPort(port, buff)
 	if n > 0 {
@@ -121,12 +118,49 @@ func requestFreque(port serial.Port, p *civCommand) {
 			fmt.Printf("%#x ", value)
 		}
 	}
+	*/
+
+	correctMsg := false
+	buff := make([]byte, 30)
+	n := 0
+	for !correctMsg {
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestTAddres)
+		time.Sleep(time.Duration(10) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestTAddres[:len(p.requestTAddres)]) {
+				fmt.Println("ECHO")
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				p.transiverAddr = buff[idx-1]
+			}
+
+		}
+	}
 
 }
 
 func IC78connect(port serial.Port) {
-	myic78civCommand := newIc78civCommand(0xe1)
-	requestTransmitterAddr(port, myic78civCommand)
 
+	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
+
+	fmt.Printf("Transiver Addr: %#x", myic78civCommand.transiverAddr)
 	//requestFreque(port, myic78civCommand)
 }
