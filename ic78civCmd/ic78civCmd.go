@@ -77,11 +77,11 @@ func requestTransmitterAddr(port serial.Port, p *civCommand) {
 		serialDataExchange.WriteSerialPort(port, p.requestTAddres)
 		_ = serialDataExchange.ReadSerialPort(port, buff)
 
-	for _, value := range buff {
-		if value == 0xfd {
-			n++
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
 		}
-	}
 		if n < 2 {
 			for i, _ := range buff {
 				buff[i] = 0x00
@@ -89,7 +89,7 @@ func requestTransmitterAddr(port serial.Port, p *civCommand) {
 		} else {
 			correctMsg = true
 		}
-	fmt.Println(n)
+		fmt.Println(n)
 	}
 	for i := 0; i < n; i++ {
 		idx := slices.Index(buff, p.endMsg)
