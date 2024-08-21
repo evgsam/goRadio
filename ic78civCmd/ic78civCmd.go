@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/albenik/bcd"
 	"go.bug.st/serial"
 )
 
@@ -21,7 +22,6 @@ type civCommand struct {
 	endMsg            byte
 	okCode            byte
 	ngCode            byte
-	requestTAddres    []byte
 	requestFreque     []byte
 }
 
@@ -36,7 +36,6 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 		endMsg:            0xfd,
 		okCode:            0xfb,
 		ngCode:            0xfa,
-		requestTAddres:    []byte{0xfe, 0xfe, 0x00, controllerAddr, 0x19, 0x00, 0xfd},
 		requestFreque:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x03, 0xfd},
 	}
 	return ic78civCommand
@@ -66,11 +65,16 @@ func setFreque(freq int) {
 
 }
 
-/*
-func frqueToInt(freqBuff []byte) int {
-
+func bcdToInt(freqBuff []byte) uint32 {
+	freqBuffRevers := make([]byte, 5)
+	j := 0
+	for i := 4; i > -1; i-- {
+		freqBuffRevers[j] = freqBuff[i]
+		j++
+	}
+	return (bcd.ToUint32(freqBuffRevers)) / 1000
 }
-*/
+
 func civDataParser(request []byte, buff []byte) {
 
 }
@@ -82,9 +86,10 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	var transiverAddr byte
 	n := 0
 	for !correctMsg {
+		port.ResetInputBuffer()
 		time.Sleep(time.Duration(100) * time.Millisecond)
 		serialDataExchange.WriteSerialPort(port, requestTAddres)
-		time.Sleep(time.Duration(10) * time.Millisecond)
+		time.Sleep(time.Duration(100) * time.Millisecond)
 		_ = serialDataExchange.ReadSerialPort(port, buff)
 		for _, value := range buff {
 			if value == 0xfd {
@@ -104,7 +109,6 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 		idx := slices.Index(buff, 0xfd)
 		if idx != -1 {
 			if bytes.Equal(buff[:idx+1], requestTAddres[:len(requestTAddres)]) {
-				fmt.Println("ECHO")
 				buff = buff[idx+1 : len(buff)]
 			} else {
 				transiverAddr = buff[idx-1]
@@ -115,15 +119,23 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	return transiverAddr
 }
 
-func requestFreque(port serial.Port, p *civCommand) []byte {
+func printByte(data []byte) {
+	for _, value := range data {
+		fmt.Printf("%#x ", value)
+	}
+	fmt.Println()
+}
+
+func requestFreque(port serial.Port, p *civCommand) uint32 {
 	correctMsg := false
 	buff := make([]byte, 30)
 	freque := make([]byte, 5)
 	n := 0
 	for !correctMsg {
+		port.ResetInputBuffer()
 		time.Sleep(time.Duration(100) * time.Millisecond)
 		serialDataExchange.WriteSerialPort(port, p.requestFreque)
-		time.Sleep(time.Duration(10) * time.Millisecond)
+		time.Sleep(time.Duration(100) * time.Millisecond)
 		_ = serialDataExchange.ReadSerialPort(port, buff)
 		for _, value := range buff {
 			if value == 0xfd {
@@ -143,7 +155,6 @@ func requestFreque(port serial.Port, p *civCommand) []byte {
 		idx := slices.Index(buff, p.endMsg)
 		if idx != -1 {
 			if bytes.Equal(buff[:idx+1], p.requestFreque[:len(p.requestFreque)]) {
-				fmt.Println("ECHO")
 				buff = buff[idx+1 : len(buff)]
 			} else {
 				freque = buff[idx-5 : idx]
@@ -151,13 +162,14 @@ func requestFreque(port serial.Port, p *civCommand) []byte {
 
 		}
 	}
-	return freque
+	return bcdToInt(freque)
 }
 
 func IC78connect(port serial.Port) {
-	/*myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
-	fmt.Printf("Transiver Addr: %#x", myic78civCommand.transiverAddr)
-	fmt.Println(requestFreque(port, myic78civCommand))
-	*/
-	setFreque(30569)
+	port.ResetInputBuffer()
+	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
+	fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
+	fmt.Printf("Transiver Freque: %d Hz \n", requestFreque(port, myic78civCommand))
+
+	//setFreque(30569)
 }
