@@ -23,6 +23,7 @@ type civCommand struct {
 	okCode            byte
 	ngCode            byte
 	requestFreque     []byte
+	requestMode       []byte
 }
 
 func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
@@ -37,6 +38,7 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 		okCode:            0xfb,
 		ngCode:            0xfa,
 		requestFreque:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x03, 0xfd},
+		requestMode:       []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x04, 0xfd},
 	}
 	return ic78civCommand
 }
@@ -44,6 +46,13 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 func addElementToFirstIndex(x []byte, y byte) []byte {
 	x = append([]byte{y}, x...)
 	return x
+}
+
+func printByte(data []byte) {
+	for _, value := range data {
+		fmt.Printf("%#x ", value)
+	}
+	fmt.Println()
 }
 
 func setFreque(freq int) {
@@ -119,11 +128,58 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	return transiverAddr
 }
 
-func printByte(data []byte) {
-	for _, value := range data {
-		fmt.Printf("%#x ", value)
+func requestMode(port serial.Port, p *civCommand) string {
+	correctMsg := false
+	buff := make([]byte, 30)
+	var mode string
+	var modeByte byte
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestMode)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
 	}
-	fmt.Println()
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestMode[:len(p.requestMode)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				modeByte = buff[idx-2]
+			}
+
+		}
+	}
+
+	switch modeByte {
+	case 0x00:
+		mode = "LSB"
+	case 0x01:
+		mode = "USB"
+	case 0x02:
+		mode = "AM"
+	case 0x04:
+		mode = "RTTY"
+	case 0x07:
+		mode = "CW"
+	}
+
+	return mode
 }
 
 func requestFreque(port serial.Port, p *civCommand) uint32 {
@@ -170,6 +226,6 @@ func IC78connect(port serial.Port) {
 	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
 	fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
 	fmt.Printf("Transiver Freque: %d Hz \n", requestFreque(port, myic78civCommand))
-
+	fmt.Println("Transiver Mode:", requestMode(port, myic78civCommand))
 	//setFreque(30569)
 }
