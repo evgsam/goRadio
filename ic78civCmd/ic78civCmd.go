@@ -107,6 +107,10 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	n := 0
 	attempt := 0
 	for !correctMsg {
+		if attempt > 20 {
+			break
+		}
+		attempt++
 		port.ResetInputBuffer()
 		time.Sleep(time.Duration(100) * time.Millisecond)
 		serialDataExchange.WriteSerialPort(port, requestTAddres)
@@ -137,6 +141,10 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 
 		}
 	}
+	if attempt > 99 {
+		fmt.Println("attempt>100!")
+	}
+
 	return transiverAddr
 }
 
