@@ -6,6 +6,7 @@ import (
 	"goRadio/serialDataExchange"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/albenik/bcd"
@@ -24,6 +25,16 @@ type civCommand struct {
 	ngCode            byte
 	requestFreque     []byte
 	requestMode       []byte
+}
+
+func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
+	for {
+		serialAcces.Lock()
+		fmt.Println("HELLO")
+		port.ResetInputBuffer()
+		serialAcces.Unlock()
+		time.Sleep(3 * time.Second)
+	}
 }
 
 func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
@@ -94,6 +105,7 @@ func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	buff := make([]byte, 30)
 	var transiverAddr byte
 	n := 0
+	attempt := 0
 	for !correctMsg {
 		port.ResetInputBuffer()
 		time.Sleep(time.Duration(100) * time.Millisecond)
@@ -221,11 +233,14 @@ func requestFreque(port serial.Port, p *civCommand) uint32 {
 	return bcdToInt(freque)
 }
 
-func IC78connect(port serial.Port) {
+func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
+	serialAcces.Lock()
+	fmt.Println("IC78 Connect")
 	port.ResetInputBuffer()
 	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
 	fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
 	fmt.Printf("Transiver Freque: %d Hz \n", requestFreque(port, myic78civCommand))
 	fmt.Println("Transiver Mode:", requestMode(port, myic78civCommand))
 	//setFreque(30569)
+	serialAcces.Unlock()
 }
