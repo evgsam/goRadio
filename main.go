@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"goRadio/ic78civCmd"
 	"goRadio/serialDataExchange"
 	"sync"
@@ -31,6 +30,5 @@ func main() {
 	ic78civCmd.IC78connect(port, &serialAccess)
 	for {
 		time.Sleep(10 * time.Second)
-		fmt.Println("main")
 	}
 }

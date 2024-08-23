@@ -29,6 +29,7 @@ type civCommand struct {
 	requestAFLevel    []byte
 	requestRFLevel    []byte
 	requestSQLLevel   []byte
+	requestPreamp     []byte
 }
 
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
@@ -57,6 +58,8 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 		requestATT:        []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x11, 0xfd},
 		requestAFLevel:    []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x01, 0xfd},
 		requestRFLevel:    []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x02, 0xfd},
+		requestSQLLevel:   []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x03, 0xfd},
+		requestPreamp:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x16, 0x02, 0xfd},
 	}
 	return ic78civCommand
 }
@@ -212,6 +215,53 @@ func requestMode(port serial.Port, p *civCommand) string {
 	return mode
 }
 
+func requestPreamp(port serial.Port, p *civCommand) string {
+	correctMsg := false
+	buff := make([]byte, 30)
+	var preamp string
+	var preampByte byte
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestPreamp)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestPreamp[:len(p.requestPreamp)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				preampByte = buff[idx-1]
+			}
+
+		}
+	}
+	switch preampByte {
+	case 0x00:
+		preamp = "OFF"
+	case 0x01:
+		preamp = "P.AMP"
+	}
+	return preamp
+
+}
+
 func requestATT(port serial.Port, p *civCommand) string {
 	correctMsg := false
 	buff := make([]byte, 30)
@@ -300,7 +350,7 @@ func requestFreque(port serial.Port, p *civCommand) uint32 {
 func requestAFLevel(port serial.Port, p *civCommand) uint32 {
 	correctMsg := false
 	buff := make([]byte, 30)
-	level := make([]byte, 5)
+	level := make([]byte, 2)
 	n := 0
 	for !correctMsg {
 		port.ResetInputBuffer()
@@ -336,6 +386,85 @@ func requestAFLevel(port serial.Port, p *civCommand) uint32 {
 	return (bcdToInt(level) * 100) / 254
 }
 
+func requestSQLLevel(port serial.Port, p *civCommand) uint32 {
+	correctMsg := false
+	buff := make([]byte, 30)
+	level := make([]byte, 2)
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestSQLLevel)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestSQLLevel[:len(p.requestSQLLevel)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				level = buff[idx-2 : idx]
+			}
+
+		}
+	}
+	return (bcdToInt(level) * 100) / 254
+}
+
+func requestRFLevel(port serial.Port, p *civCommand) uint32 {
+	correctMsg := false
+	buff := make([]byte, 30)
+	level := make([]byte, 2)
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestRFLevel)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestRFLevel[:len(p.requestRFLevel)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				level = buff[idx-2 : idx]
+			}
+
+		}
+	}
+
+	return bcdToInt(level)
+}
+
 func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
 	serialAcces.Lock()
 	fmt.Println("IC78 Connect")
@@ -346,6 +475,9 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
 	fmt.Println("Transiver Mode:", requestMode(port, myic78civCommand))
 	fmt.Println("ATT status:", requestATT(port, myic78civCommand))
 	fmt.Printf("AF level: %d % \n", requestAFLevel(port, myic78civCommand))
+	fmt.Printf("RF level: %d \n", requestRFLevel(port, myic78civCommand))
+	fmt.Printf("SQL level: %d % \n", requestSQLLevel(port, myic78civCommand))
+	fmt.Println("Preamp status:", requestPreamp(port, myic78civCommand))
 	//setFreque(30569)
 	serialAcces.Unlock()
 }
