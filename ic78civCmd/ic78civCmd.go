@@ -92,14 +92,17 @@ func setFreque(freq int) {
 
 }
 
-func bcdToInt(freqBuff []byte) uint32 {
-	freqBuffRevers := make([]byte, 5)
-	j := 0
-	for i := 4; i > -1; i-- {
-		freqBuffRevers[j] = freqBuff[i]
-		j++
+func bcdToInt(buff []byte) uint32 {
+	if len(buff) > 2 {
+		buffRevers := make([]byte, len(buff))
+		j := 0
+		for i := len(buff) - 1; i > -1; i-- {
+			buffRevers[j] = buff[i]
+			j++
+		}
+		return bcd.ToUint32(buffRevers)
 	}
-	return (bcd.ToUint32(freqBuffRevers)) / 1000
+	return bcd.ToUint32(buff)
 }
 
 func civDataParser(request []byte, buff []byte) {
