@@ -209,6 +209,52 @@ func requestMode(port serial.Port, p *civCommand) string {
 	return mode
 }
 
+func requestATT(port serial.Port, p *civCommand) string {
+	correctMsg := false
+	buff := make([]byte, 30)
+	var att string
+	var attByte byte
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestATT)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestATT[:len(p.requestATT)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				attByte = buff[idx-1]
+			}
+
+		}
+	}
+	switch attByte {
+	case 0x00:
+		att = "NO"
+	case 0x20:
+		att = "YES"
+	}
+	return att
+}
+
 func requestFreque(port serial.Port, p *civCommand) uint32 {
 	correctMsg := false
 	buff := make([]byte, 30)
@@ -256,6 +302,8 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
 	fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
 	fmt.Printf("Transiver Freque: %d Hz \n", requestFreque(port, myic78civCommand))
 	fmt.Println("Transiver Mode:", requestMode(port, myic78civCommand))
+	fmt.Println("ATT status:", requestATT(port, myic78civCommand))
+	fmt.Printf("AF level: %d % \n", requestAFLevel(port, myic78civCommand))
 	//setFreque(30569)
 	serialAcces.Unlock()
 }
