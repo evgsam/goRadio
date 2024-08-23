@@ -291,7 +291,46 @@ func requestFreque(port serial.Port, p *civCommand) uint32 {
 
 		}
 	}
-	return bcdToInt(freque)
+	return bcdToInt(freque) / 1000
+}
+
+func requestAFLevel(port serial.Port, p *civCommand) uint32 {
+	correctMsg := false
+	buff := make([]byte, 30)
+	level := make([]byte, 5)
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestAFLevel)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestAFLevel[:len(p.requestAFLevel)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				level = buff[idx-2 : idx]
+			}
+
+		}
+	}
+	return (bcdToInt(level) * 100) / 254
 }
 
 func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
