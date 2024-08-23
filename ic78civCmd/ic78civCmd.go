@@ -25,6 +25,10 @@ type civCommand struct {
 	ngCode            byte
 	requestFreque     []byte
 	requestMode       []byte
+	requestATT        []byte
+	requestAFLevel    []byte
+	requestRFLevel    []byte
+	requestSQLLevel   []byte
 }
 
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
@@ -50,6 +54,9 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 		ngCode:            0xfa,
 		requestFreque:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x03, 0xfd},
 		requestMode:       []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x04, 0xfd},
+		requestATT:        []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x11, 0xfd},
+		requestAFLevel:    []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x01, 0xfd},
+		requestRFLevel:    []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x02, 0xfd},
 	}
 	return ic78civCommand
 }
