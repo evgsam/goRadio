@@ -108,10 +108,6 @@ func bcdToInt(buff []byte) uint32 {
 	return bcd.ToUint32(buff)
 }
 
-func civDataParser(request []byte, buff []byte) {
-
-}
-
 func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
 	requestTAddres := []byte{0xfe, 0xfe, 0x00, controllerAdr, 0x19, 0x00, 0xfd}
 	correctMsg := false
@@ -198,7 +194,6 @@ func requestMode(port serial.Port, p *civCommand) string {
 
 		}
 	}
-
 	switch modeByte {
 	case 0x00:
 		mode = "LSB"
@@ -211,7 +206,6 @@ func requestMode(port serial.Port, p *civCommand) string {
 	case 0x07:
 		mode = "CW"
 	}
-
 	return mode
 }
 

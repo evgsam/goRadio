@@ -9,19 +9,6 @@ import (
 	"go.bug.st/serial"
 )
 
-/*
-	func printByte(data []byte) {
-		for _, value := range data {
-			fmt.Printf("%#x ", value)
-		}
-		fmt.Println()
-	}
-*/
-
-func menu() {
-
-}
-
 func main() {
 	var port serial.Port
 	var serialAccess sync.Mutex
