@@ -249,121 +249,18 @@ func requestFreque(port serial.Port, p *civCommand) uint32 {
 }
 
 func requestAFLevel(port serial.Port, p *civCommand) uint32 {
-	correctMsg := false
-	buff := make([]byte, 30)
-	level := make([]byte, 2)
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestAFLevel)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestAFLevel[:len(p.requestAFLevel)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				level = buff[idx-2 : idx]
-			}
-
-		}
-	}
-	return (bcdToInt(level) * 100) / 254
+	buff := commandSend(port, nil, AF)
+	return (bcdToInt(buff) * 100) / 254
 }
 
 func requestSQLLevel(port serial.Port, p *civCommand) uint32 {
-	correctMsg := false
-	buff := make([]byte, 30)
-	level := make([]byte, 2)
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestSQLLevel)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestSQLLevel[:len(p.requestSQLLevel)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				level = buff[idx-2 : idx]
-			}
-
-		}
-	}
-	return (bcdToInt(level) * 100) / 254
+	buff := commandSend(port, nil, SQL)
+	return (bcdToInt(buff) * 100) / 254
 }
 
 func requestRFLevel(port serial.Port, p *civCommand) uint32 {
-	correctMsg := false
-	buff := make([]byte, 30)
-	level := make([]byte, 2)
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestRFLevel)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestRFLevel[:len(p.requestRFLevel)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				level = buff[idx-2 : idx]
-			}
-
-		}
-	}
-
-	return bcdToInt(level)
+	buff := commandSend(port, nil, SQL)
+	return bcdToInt(buff)
 }
 
 func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
