@@ -14,23 +14,49 @@ import (
 )
 
 type civCommand struct {
-	preamble          byte
-	transiverAddr     byte
-	controllerAddr    byte
-	setFrequeCommand  byte
-	readFrequeCommand byte
-	readTransiverAddr byte
-	endMsg            byte
-	okCode            byte
-	ngCode            byte
-	requestFreque     []byte
-	requestMode       []byte
-	requestATT        []byte
-	requestAFLevel    []byte
-	requestRFLevel    []byte
-	requestSQLLevel   []byte
-	requestPreamp     []byte
+	transiverAddr   byte
+	controllerAddr  byte
+	requestFreque   []byte
+	requestMode     []byte
+	requestATT      []byte
+	requestAFLevel  []byte
+	requestRFLevel  []byte
+	requestSQLLevel []byte
+	requestPreamp   []byte
 }
+
+type cmdValue byte
+
+const (
+	preamble     cmdValue = 0xfe
+	readFreq     cmdValue = 0x03
+	readMode     cmdValue = 0x04
+	setFreq      cmdValue = 0x05
+	setMode      cmdValue = 0x06
+	attCmd       cmdValue = 0x11
+	afrfsqlCmd   cmdValue = 0x14
+	afSubCmd     cmdValue = 0x01
+	rfSubCmd     cmdValue = 0x02
+	sqlSubCmd    cmdValue = 0x03
+	preampCmd    cmdValue = 0x16
+	preampSubCmd cmdValue = 0x02
+	readAddrCmd  cmdValue = 0x19
+	endMsg       cmdValue = 0xfd
+	okCode       cmdValue = 0xfb
+	ngCode       cmdValue = 0xfa
+)
+
+type commandName int
+
+const (
+	FREQ commandName = iota
+	MODE
+	ATT
+	AF
+	RF
+	SQL
+	PREAMP
+)
 
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 	for {
@@ -44,22 +70,15 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 
 func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 	ic78civCommand := &civCommand{
-		preamble:          0xfe,
-		transiverAddr:     transiverAddr,
-		controllerAddr:    controllerAddr,
-		setFrequeCommand:  0x05,
-		readFrequeCommand: 0x03,
-		readTransiverAddr: 0x19,
-		endMsg:            0xfd,
-		okCode:            0xfb,
-		ngCode:            0xfa,
-		requestFreque:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x03, 0xfd},
-		requestMode:       []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x04, 0xfd},
-		requestATT:        []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x11, 0xfd},
-		requestAFLevel:    []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x01, 0xfd},
-		requestRFLevel:    []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x02, 0xfd},
-		requestSQLLevel:   []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x14, 0x03, 0xfd},
-		requestPreamp:     []byte{0xfe, 0xfe, transiverAddr, controllerAddr, 0x16, 0x02, 0xfd},
+		transiverAddr:   transiverAddr,
+		controllerAddr:  controllerAddr,
+		requestFreque:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(readFreq), byte(endMsg)},
+		requestMode:     []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(readMode), byte(endMsg)},
+		requestATT:      []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(attCmd), byte(endMsg)},
+		requestAFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x14, 0x01, byte(endMsg)},
+		requestRFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x14, 0x02, byte(endMsg)},
+		requestSQLLevel: []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x14, 0x03, byte(endMsg)},
+		requestPreamp:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x16, 0x02, byte(endMsg)},
 	}
 	return ic78civCommand
 }
@@ -380,6 +399,74 @@ func requestAFLevel(port serial.Port, p *civCommand) uint32 {
 	return (bcdToInt(level) * 100) / 254
 }
 
+/*
+	func commandSend(port serial.Port, p *civCommand, c commandValue) {
+		correctMsg := false
+		readBuff := make([]byte, 30)
+		var arg []byte
+		var dataBuff []byte
+		//var cmd byte
+		switch c {
+		case FREQ:
+			arg = p.requestFreque
+			dataBuff := make([]byte, 5)
+			//cmd=
+		case MODE:
+			arg = p.requestMode
+			dataBuff := make([]byte, 1)
+		case ATT:
+			arg = p.requestATT
+			dataBuff := make([]byte, 1)
+		case AF:
+			arg = p.requestAFLevel
+			dataBuff := make([]byte, 2)
+		case RF:
+			arg = p.requestRFLevel
+			dataBuff := make([]byte, 2)
+		case SQL:
+			arg = p.requestSQLLevel
+			dataBuff := make([]byte, 2)
+		case PREAMP:
+			arg = p.requestPreamp
+			dataBuff := make([]byte, 1)
+		}
+		n := 0
+		for !correctMsg {
+			port.ResetInputBuffer()
+			time.Sleep(time.Duration(100) * time.Millisecond)
+			serialDataExchange.WriteSerialPort(port, arg)
+			time.Sleep(time.Duration(100) * time.Millisecond)
+			_ = serialDataExchange.ReadSerialPort(port, readBuff)
+			for _, value := range readBuff {
+				if value == 0xfd {
+					n++
+				}
+			}
+			if n < 2 {
+				n = 0
+				for i, _ := range readBuff {
+					readBuff[i] = 0x00
+				}
+			} else {
+				correctMsg = true
+			}
+		}
+		for i := 0; i < n; i++ {
+			//idxCmd := slices.Index(readBuff, p.endMsg)
+			idxEnd := slices.Index(readBuff, p.endMsg)
+
+			if idxEnd != -1 {
+				if bytes.Equal(buff[:idxEnd+1], p.requestSQLLevel[:len(p.requestSQLLevel)]) {
+					buff = buff[idxEnd+1 : len(buff)]
+				} else {
+					level = buff[idxEnd-2 : idxEnd]
+				}
+
+			}
+		}
+
+}
+*/
 func requestSQLLevel(port serial.Port, p *civCommand) uint32 {
 	correctMsg := false
 	buff := make([]byte, 30)
