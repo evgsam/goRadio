@@ -50,6 +50,7 @@ type commandName int
 
 const (
 	FREQ commandName = iota
+	TADDR
 	MODE
 	ATT
 	AF
@@ -126,278 +127,6 @@ func bcdToInt(buff []byte) uint32 {
 	return bcd.ToUint32(buff)
 }
 
-func requestTransiverAddr(port serial.Port) byte {
-	requestTAddres := []byte{byte(preambleCmd), byte(preambleCmd), 0x00, byte(controllerAddrCmd), byte(readAddrCmd), 0x00, byte(endMsgCmd)}
-	correctMsg := false
-	buff := make([]byte, 30)
-	var transiverAddr byte
-	n := 0
-	attempt := 0
-	for !correctMsg {
-		if attempt > 20 {
-			break
-		}
-		attempt++
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, requestTAddres)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, 0xfd)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], requestTAddres[:len(requestTAddres)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				transiverAddr = buff[idx-1]
-			}
-
-		}
-	}
-	if attempt > 99 {
-		fmt.Println("attempt>100!")
-	}
-
-	return transiverAddr
-}
-
-func requestMode(port serial.Port, p *civCommand) string {
-	correctMsg := false
-	buff := make([]byte, 30)
-	var mode string
-	var modeByte byte
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestMode)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestMode[:len(p.requestMode)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				modeByte = buff[idx-2]
-			}
-
-		}
-	}
-	switch modeByte {
-	case 0x00:
-		mode = "LSB"
-	case 0x01:
-		mode = "USB"
-	case 0x02:
-		mode = "AM"
-	case 0x04:
-		mode = "RTTY"
-	case 0x07:
-		mode = "CW"
-	}
-	return mode
-}
-
-func requestPreamp(port serial.Port, p *civCommand) string {
-	correctMsg := false
-	buff := make([]byte, 30)
-	var preamp string
-	var preampByte byte
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestPreamp)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestPreamp[:len(p.requestPreamp)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				preampByte = buff[idx-1]
-			}
-
-		}
-	}
-	switch preampByte {
-	case 0x00:
-		preamp = "OFF"
-	case 0x01:
-		preamp = "P.AMP"
-	}
-	return preamp
-
-}
-
-func requestATT(port serial.Port, p *civCommand) string {
-	correctMsg := false
-	buff := make([]byte, 30)
-	var att string
-	var attByte byte
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestATT)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestATT[:len(p.requestATT)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				attByte = buff[idx-1]
-			}
-
-		}
-	}
-	switch attByte {
-	case 0x00:
-		att = "NO"
-	case 0x20:
-		att = "YES"
-	}
-	return att
-}
-
-func requestFreque(port serial.Port, p *civCommand) uint32 {
-	correctMsg := false
-	buff := make([]byte, 30)
-	freque := make([]byte, 5)
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestFreque)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestFreque[:len(p.requestFreque)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				freque = buff[idx-5 : idx]
-			}
-
-		}
-	}
-	return bcdToInt(freque) / 1000
-}
-
-func requestAFLevel(port serial.Port, p *civCommand) uint32 {
-	correctMsg := false
-	buff := make([]byte, 30)
-	level := make([]byte, 2)
-	n := 0
-	for !correctMsg {
-		port.ResetInputBuffer()
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		serialDataExchange.WriteSerialPort(port, p.requestAFLevel)
-		time.Sleep(time.Duration(100) * time.Millisecond)
-		_ = serialDataExchange.ReadSerialPort(port, buff)
-		for _, value := range buff {
-			if value == 0xfd {
-				n++
-			}
-		}
-		if n < 2 {
-			n = 0
-			for i, _ := range buff {
-				buff[i] = 0x00
-			}
-		} else {
-			correctMsg = true
-		}
-	}
-	for i := 0; i < n; i++ {
-		idx := slices.Index(buff, p.endMsg)
-		if idx != -1 {
-			if bytes.Equal(buff[:idx+1], p.requestAFLevel[:len(p.requestAFLevel)]) {
-				buff = buff[idx+1 : len(buff)]
-			} else {
-				level = buff[idx-2 : idx]
-			}
-
-		}
-	}
-	return (bcdToInt(level) * 100) / 254
-}
-
 func commandSend(port serial.Port, p *civCommand, c commandName) []byte {
 	correctMsg := false
 	readBuff := make([]byte, 30)
@@ -408,6 +137,9 @@ func commandSend(port serial.Port, p *civCommand, c commandName) []byte {
 	case FREQ:
 		arg = p.requestFreque
 		cmd = byte(readFreqCmd)
+	case TADDR:
+		arg = []byte{byte(preambleCmd), byte(preambleCmd), 0x00, byte(controllerAddrCmd), byte(readAddrCmd), 0x00, byte(endMsgCmd)}
+		cmd = byte(readAddrCmd)
 	case MODE:
 		arg = p.requestMode
 		cmd = byte(readModeCmd)
@@ -462,6 +194,97 @@ func commandSend(port serial.Port, p *civCommand, c commandName) []byte {
 		}
 	}
 	return dataBuff
+}
+
+func requestTransiverAddr(port serial.Port) byte {
+	buff := commandSend(port, nil, TADDR)
+	return buff[0]
+}
+
+func requestMode(port serial.Port, p *civCommand) string {
+	buff := commandSend(port, nil, MODE)
+	var mode string
+	switch buff[0] {
+	case 0x00:
+		mode = "LSB"
+	case 0x01:
+		mode = "USB"
+	case 0x02:
+		mode = "AM"
+	case 0x04:
+		mode = "RTTY"
+	case 0x07:
+		mode = "CW"
+	}
+	return mode
+}
+
+func requestPreamp(port serial.Port, p *civCommand) string {
+	buff := commandSend(port, nil, PREAMP)
+	var preamp string
+	switch buff[0] {
+	case 0x00:
+		preamp = "OFF"
+	case 0x01:
+		preamp = "P.AMP"
+	}
+	return preamp
+}
+
+func requestATT(port serial.Port, p *civCommand) string {
+	buff := commandSend(port, nil, ATT)
+	var att string
+	switch buff[0] {
+	case 0x00:
+		att = "NO"
+	case 0x20:
+		att = "YES"
+	}
+	return att
+}
+
+func requestFreque(port serial.Port, p *civCommand) uint32 {
+	buff := commandSend(port, nil, FREQ)
+	return bcdToInt(buff) / 1000
+}
+
+func requestAFLevel(port serial.Port, p *civCommand) uint32 {
+	correctMsg := false
+	buff := make([]byte, 30)
+	level := make([]byte, 2)
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, p.requestAFLevel)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, buff)
+		for _, value := range buff {
+			if value == 0xfd {
+				n++
+			}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range buff {
+				buff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		idx := slices.Index(buff, p.endMsg)
+		if idx != -1 {
+			if bytes.Equal(buff[:idx+1], p.requestAFLevel[:len(p.requestAFLevel)]) {
+				buff = buff[idx+1 : len(buff)]
+			} else {
+				level = buff[idx-2 : idx]
+			}
+
+		}
+	}
+	return (bcdToInt(level) * 100) / 254
 }
 
 func requestSQLLevel(port serial.Port, p *civCommand) uint32 {
