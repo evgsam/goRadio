@@ -15,7 +15,6 @@ import (
 
 type civCommand struct {
 	transiverAddr   byte
-	controllerAddr  byte
 	requestFreque   []byte
 	requestMode     []byte
 	requestATT      []byte
@@ -28,22 +27,23 @@ type civCommand struct {
 type cmdValue byte
 
 const (
-	preamble     cmdValue = 0xfe
-	readFreq     cmdValue = 0x03
-	readMode     cmdValue = 0x04
-	setFreq      cmdValue = 0x05
-	setMode      cmdValue = 0x06
-	attCmd       cmdValue = 0x11
-	afrfsqlCmd   cmdValue = 0x14
-	afSubCmd     cmdValue = 0x01
-	rfSubCmd     cmdValue = 0x02
-	sqlSubCmd    cmdValue = 0x03
-	preampCmd    cmdValue = 0x16
-	preampSubCmd cmdValue = 0x02
-	readAddrCmd  cmdValue = 0x19
-	endMsg       cmdValue = 0xfd
-	okCode       cmdValue = 0xfb
-	ngCode       cmdValue = 0xfa
+	controllerAddr cmdValue = 0xe1
+	preamble       cmdValue = 0xfe
+	readFreq       cmdValue = 0x03
+	readMode       cmdValue = 0x04
+	setFreq        cmdValue = 0x05
+	setMode        cmdValue = 0x06
+	attCmd         cmdValue = 0x11
+	afrfsqlCmd     cmdValue = 0x14
+	afSubCmd       cmdValue = 0x01
+	rfSubCmd       cmdValue = 0x02
+	sqlSubCmd      cmdValue = 0x03
+	preampCmd      cmdValue = 0x16
+	preampSubCmd   cmdValue = 0x02
+	readAddrCmd    cmdValue = 0x19
+	endMsg         cmdValue = 0xfd
+	okCode         cmdValue = 0xfb
+	ngCode         cmdValue = 0xfa
 )
 
 type commandName int
@@ -68,17 +68,16 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 	}
 }
 
-func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
+func newIc78civCommand(transiverAddr byte) *civCommand {
 	ic78civCommand := &civCommand{
 		transiverAddr:   transiverAddr,
-		controllerAddr:  controllerAddr,
-		requestFreque:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(readFreq), byte(endMsg)},
-		requestMode:     []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(readMode), byte(endMsg)},
-		requestATT:      []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(attCmd), byte(endMsg)},
-		requestAFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(afrfsqlCmd), byte(afSubCmd), byte(endMsg)},
-		requestRFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(afrfsqlCmd), byte(rfSubCmd), byte(endMsg)},
-		requestSQLLevel: []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(afrfsqlCmd), byte(sqlSubCmd), byte(endMsg)},
-		requestPreamp:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(preampCmd), byte(preampSubCmd), byte(endMsg)},
+		requestFreque:   []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(readFreq), byte(endMsg)},
+		requestMode:     []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(readMode), byte(endMsg)},
+		requestATT:      []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(attCmd), byte(endMsg)},
+		requestAFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(afrfsqlCmd), byte(afSubCmd), byte(endMsg)},
+		requestRFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(afrfsqlCmd), byte(rfSubCmd), byte(endMsg)},
+		requestSQLLevel: []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(afrfsqlCmd), byte(sqlSubCmd), byte(endMsg)},
+		requestPreamp:   []byte{byte(preamble), byte(preamble), transiverAddr, byte(controllerAddr), byte(preampCmd), byte(preampSubCmd), byte(endMsg)},
 	}
 	return ic78civCommand
 }
@@ -127,8 +126,8 @@ func bcdToInt(buff []byte) uint32 {
 	return bcd.ToUint32(buff)
 }
 
-func requestTransiverAddr(port serial.Port, controllerAdr byte) byte {
-	requestTAddres := []byte{0xfe, 0xfe, 0x00, controllerAdr, 0x19, 0x00, 0xfd}
+func requestTransiverAddr(port serial.Port) byte {
+	requestTAddres := []byte{byte(preamble), byte(preamble), 0x00, byte(controllerAddr), byte(readAddrCmd), 0x00, byte(endMsg)}
 	correctMsg := false
 	buff := make([]byte, 30)
 	var transiverAddr byte
@@ -550,7 +549,7 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) {
 	serialAcces.Lock()
 	fmt.Println("IC78 Connect")
 	port.ResetInputBuffer()
-	myic78civCommand := newIc78civCommand(0xe1, requestTransiverAddr(port, 0xe1))
+	myic78civCommand := newIc78civCommand(requestTransiverAddr(port))
 	fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
 	fmt.Printf("Transiver Freque: %d Hz \n", requestFreque(port, myic78civCommand))
 	fmt.Println("Transiver Mode:", requestMode(port, myic78civCommand))
