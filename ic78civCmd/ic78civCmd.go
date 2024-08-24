@@ -398,74 +398,83 @@ func requestAFLevel(port serial.Port, p *civCommand) uint32 {
 	return (bcdToInt(level) * 100) / 254
 }
 
-/*
-	func commandSend(port serial.Port, p *civCommand, c commandValue) {
-		correctMsg := false
-		readBuff := make([]byte, 30)
-		var arg []byte
-		var dataBuff []byte
-		//var cmd byte
-		switch c {
-		case FREQ:
-			arg = p.requestFreque
-			dataBuff := make([]byte, 5)
-			//cmd=
-		case MODE:
-			arg = p.requestMode
-			dataBuff := make([]byte, 1)
-		case ATT:
-			arg = p.requestATT
-			dataBuff := make([]byte, 1)
-		case AF:
-			arg = p.requestAFLevel
-			dataBuff := make([]byte, 2)
-		case RF:
-			arg = p.requestRFLevel
-			dataBuff := make([]byte, 2)
-		case SQL:
-			arg = p.requestSQLLevel
-			dataBuff := make([]byte, 2)
-		case PREAMP:
-			arg = p.requestPreamp
-			dataBuff := make([]byte, 1)
-		}
-		n := 0
-		for !correctMsg {
-			port.ResetInputBuffer()
-			time.Sleep(time.Duration(100) * time.Millisecond)
-			serialDataExchange.WriteSerialPort(port, arg)
-			time.Sleep(time.Duration(100) * time.Millisecond)
-			_ = serialDataExchange.ReadSerialPort(port, readBuff)
-			for _, value := range readBuff {
-				if value == 0xfd {
-					n++
-				}
+func commandSend(port serial.Port, p *civCommand, c commandValue) {
+	correctMsg := false
+	readBuff := make([]byte, 30)
+	var arg []byte
+	var dataBuff []byte
+	var cmd, subcmd byte
+	switch c {
+	case FREQ:
+		arg = p.requestFreque
+		dataBuff := make([]byte, 5)
+		cmd = byte(readFreqCmd)
+	case MODE:
+		arg = p.requestMode
+		dataBuff := make([]byte, 1)
+		cmd = byte(readModeCmd)
+	case ATT:
+		arg = p.requestATT
+		dataBuff := make([]byte, 1)
+		cmd = byte(attCmd)
+	case AF:
+		arg = p.requestAFLevel
+		dataBuff := make([]byte, 2)
+		cmd = byte(afrfsqlCmd)
+		subcmd = byte(afSubCmd)
+	case RF:
+		arg = p.requestRFLevel
+		dataBuff := make([]byte, 2)
+		cmd = byte(afrfsqlCmd)
+		subcmd = byte(rfSubCmd)
+	case SQL:
+		arg = p.requestSQLLevel
+		dataBuff := make([]byte, 2)
+		cmd = byte(afrfsqlCmd)
+		subcmd = byte(sqlSubCmd)
+	case PREAMP:
+		arg = p.requestPreamp
+		dataBuff := make([]byte, 1)
+		cmd = byte(preampCmd)
+		subcmd = byte(preampSubCmd)
+	}
+	n := 0
+	for !correctMsg {
+		port.ResetInputBuffer()
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		serialDataExchange.WriteSerialPort(port, arg)
+		time.Sleep(time.Duration(100) * time.Millisecond)
+		_ = serialDataExchange.ReadSerialPort(port, readBuff)
+		for _, value := range readBuff {
+			if value == 0xfd {
+				n++
 			}
-			if n < 2 {
-				n = 0
-				for i, _ := range readBuff {
-					readBuff[i] = 0x00
-				}
+		}
+		if n < 2 {
+			n = 0
+			for i, _ := range readBuff {
+				readBuff[i] = 0x00
+			}
+		} else {
+			correctMsg = true
+		}
+	}
+	for i := 0; i < n; i++ {
+		//idxCmd := slices.Index(readBuff, p.endMsg)
+		idxEnd := slices.Index(readBuff, p.endMsg)
+
+		if idxEnd != -1 {
+			if bytes.Equal(buff[:idxEnd+1], p.requestSQLLevel[:len(p.requestSQLLevel)]) {
+				buff = buff[idxEnd+1 : len(buff)]
 			} else {
-				correctMsg = true
+				level = buff[idxEnd-2 : idxEnd]
 			}
-		}
-		for i := 0; i < n; i++ {
-			//idxCmd := slices.Index(readBuff, p.endMsg)
-			idxEnd := slices.Index(readBuff, p.endMsg)
 
-			if idxEnd != -1 {
-				if bytes.Equal(buff[:idxEnd+1], p.requestSQLLevel[:len(p.requestSQLLevel)]) {
-					buff = buff[idxEnd+1 : len(buff)]
-				} else {
-					level = buff[idxEnd-2 : idxEnd]
-				}
-
-			}
 		}
+	}
 
 }
-*/
+
 func requestSQLLevel(port serial.Port, p *civCommand) uint32 {
 	correctMsg := false
 	buff := make([]byte, 30)
