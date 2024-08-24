@@ -75,10 +75,10 @@ func newIc78civCommand(controllerAddr byte, transiverAddr byte) *civCommand {
 		requestFreque:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(readFreq), byte(endMsg)},
 		requestMode:     []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(readMode), byte(endMsg)},
 		requestATT:      []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(attCmd), byte(endMsg)},
-		requestAFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x14, 0x01, byte(endMsg)},
-		requestRFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x14, 0x02, byte(endMsg)},
-		requestSQLLevel: []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x14, 0x03, byte(endMsg)},
-		requestPreamp:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, 0x16, 0x02, byte(endMsg)},
+		requestAFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(afrfsqlCmd), byte(afSubCmd), byte(endMsg)},
+		requestRFLevel:  []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(afrfsqlCmd), byte(rfSubCmd), byte(endMsg)},
+		requestSQLLevel: []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(afrfsqlCmd), byte(sqlSubCmd), byte(endMsg)},
+		requestPreamp:   []byte{byte(preamble), byte(preamble), transiverAddr, controllerAddr, byte(preampCmd), byte(preampSubCmd), byte(endMsg)},
 	}
 	return ic78civCommand
 }
