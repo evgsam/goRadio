@@ -62,8 +62,13 @@ const (
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 	for {
 		serialAcces.Lock()
-		fmt.Println("HELLO")
 		port.ResetInputBuffer()
+		transiverAddr := requestTransiverAddr(port)
+		if transiverAddr == 0x00 {
+			for requestTransiverAddr(port) != 0 {
+				time.Sleep(50 * time.Millisecond)
+			}
+		}
 		serialAcces.Unlock()
 		time.Sleep(3 * time.Second)
 	}
@@ -130,7 +135,7 @@ func bcdToInt(buff []byte) uint32 {
 func commandSend(port serial.Port, p *civCommand, c commandName) []byte {
 	correctMsg := false
 	readBuff := make([]byte, 30)
-	dataBuff := make([]byte, 5)
+	dataBuff := make([]byte, 7)
 	var arg []byte
 	var cmd byte
 	switch c {
@@ -183,7 +188,6 @@ func commandSend(port serial.Port, p *civCommand, c commandName) []byte {
 	for i := 0; i < n; i++ {
 		idxCmd := slices.Index(readBuff, cmd)
 		idxEnd := slices.Index(readBuff, byte(endMsgCmd))
-
 		if idxEnd != -1 {
 			if bytes.Equal(readBuff[:idxEnd+1], arg[:len(arg)]) {
 				readBuff = readBuff[idxEnd+1 : len(readBuff)]
