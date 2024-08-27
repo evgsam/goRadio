@@ -19,7 +19,7 @@ func main() {
 	var port serial.Port
 	var serialAccess sync.Mutex
 	port = serialDataExchange.OpenSerialPort(19200, 8)
-	go ic78civCmd.DataPollingGorutine(port, &serialAccess)
+	//go ic78civCmd.DataPollingGorutine(port, &serialAccess)
 	err := ic78civCmd.IC78connect(port, &serialAccess)
 	if err != nil {
 		fmt.Println("error:", err)

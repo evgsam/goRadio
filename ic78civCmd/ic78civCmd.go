@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"goRadio/serialDataExchange"
 	"slices"
-	"strconv"
 	"sync"
 	"time"
 
@@ -108,20 +107,22 @@ func printByte(data []byte) {
 }
 
 func setFreque(freq int) {
-	buf := make([]byte, 5)
-	arr := make([]byte, len(strconv.Itoa(freq)), 10)
-	for i := len(arr) - 1; freq > 0; i-- {
-		arr[i] = byte(freq % 10)
-		freq = int(freq / 10)
-	}
-	for len(arr) < 10 {
-		arr = addElementToFirstIndex(arr, 0)
-	}
-	dig := 5
-	for i := 0; i < 10; i = i + 2 {
-		dig--
-		buf[dig] = (arr[i] * 10) + arr[i+1]
-	}
+	buf := bcd.FromUint32(uint32(freq))
+	/*	buf := make([]byte, 5)
+		arr := make([]byte, len(strconv.Itoa(freq)), 10)
+		for i := len(arr) - 1; freq > 0; i-- {
+			arr[i] = byte(freq % 10)
+			freq = int(freq / 10)
+		}
+		for len(arr) < 10 {
+			arr = addElementToFirstIndex(arr, 0)
+		}
+		dig := 5
+		for i := 0; i < 10; i = i + 2 {
+			dig--
+			buf[dig] = (arr[i] * 10) + arr[i+1]
+		}
+	*/
 	println(buf)
 
 }
@@ -311,68 +312,68 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	serialAcces.Lock()
 	fmt.Println("IC78 Connect")
 	port.ResetInputBuffer()
-	var myic78civCommand *civCommand
-	addr, err := requestTransiverAddr(port)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		myic78civCommand = newIc78civCommand(addr)
-		fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
-	}
-	freq, err := requestFreque(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Printf("Transiver Freque: %d Hz \n", freq)
-	}
-	mode, err := requestMode(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Println("Transiver Mode:", mode)
-	}
-	att, err := requestATT(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Println("ATT status:", att)
-	}
-	af, err := requestAFLevel(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Printf("AF level: %d % \n", af)
-	}
-	rf, err := requestRFLevel(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Printf("RF level: %d % \n", rf)
-	}
-	sql, err := requestSQLLevel(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Printf("SQL level: %d % \n", sql)
-	}
-	preamp, err := requestPreamp(port, myic78civCommand)
-	if err != nil {
-		serialAcces.Unlock()
-		return err
-	} else {
-		fmt.Println("Preamp status:", preamp)
-	}
-
+	setFreque(212340)
+	/*
+		var myic78civCommand *civCommand
+		addr, err := requestTransiverAddr(port)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			myic78civCommand = newIc78civCommand(addr)
+			fmt.Printf("Transiver Addr: %#x \n", myic78civCommand.transiverAddr)
+		}
+		freq, err := requestFreque(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Printf("Transiver Freque: %d Hz \n", freq)
+		}
+		mode, err := requestMode(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Println("Transiver Mode:", mode)
+		}
+		att, err := requestATT(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Println("ATT status:", att)
+		}
+		af, err := requestAFLevel(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Printf("AF level: %d % \n", af)
+		}
+		rf, err := requestRFLevel(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Printf("RF level: %d % \n", rf)
+		}
+		sql, err := requestSQLLevel(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Printf("SQL level: %d % \n", sql)
+		}
+		preamp, err := requestPreamp(port, myic78civCommand)
+		if err != nil {
+			serialAcces.Unlock()
+			return err
+		} else {
+			fmt.Println("Preamp status:", preamp)
+		}
+	*/
 	serialAcces.Unlock()
 	return nil
-
-	//setFreque(30569)
 
 }
