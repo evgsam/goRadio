@@ -110,7 +110,7 @@ func printByte(data []byte) {
 func setFreque(port serial.Port, p *civCommand, freq int) error {
 	correctMsg := false
 	attempt := 0
-	buf := make([]byte, 5)
+	buf := make([]byte, 4)
 	freqBuf := intToBcdArr(freq)
 	for !correctMsg {
 		if attempt < 10 {
@@ -178,21 +178,23 @@ func setFreque(port serial.Port, p *civCommand, freq int) error {
 }
 
 func intToBcdArr(freq int) []byte {
-	buf := make([]byte, 5)
+	buf := make([]byte, 4)
 	arr := make([]byte, len(strconv.Itoa(freq)), 10)
 	for i := len(arr) - 1; freq > 0; i-- {
 		arr[i] = byte(freq % 10)
 		freq = int(freq / 10)
 	}
-	for len(arr) < 10 {
+	arr = append(arr, 0x00)
+	for len(arr) < 8 {
 		arr = addElementToFirstIndex(arr, 0)
 	}
 
-	dig := 4
-	for i := 0; i < 10; i = i + 2 {
+	dig := len(arr)/2 - 1
+	for i := 0; i < len(arr)-1; i = i + 2 {
 		buf[dig] = bcd.FromUint8((arr[i] * 10) + arr[i+1])
 		dig--
 	}
+	printByte(buf)
 	return buf
 }
 
@@ -383,7 +385,7 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	port.ResetInputBuffer()
 	//intToBcdArr(21234)
 	var myic78civCommand *civCommand
-	err := setFreque(port, myic78civCommand, 21234)
+	err := setFreque(port, myic78civCommand, 2999)
 	if err == nil {
 		fmt.Println("OK")
 	}
