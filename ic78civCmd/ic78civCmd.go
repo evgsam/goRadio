@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"goRadio/serialDataExchange"
 	"slices"
+	"strconv"
 	"sync"
 	"time"
 
@@ -106,25 +107,93 @@ func printByte(data []byte) {
 	fmt.Println()
 }
 
-func setFreque(freq int) {
-	buf := bcd.FromUint32(uint32(freq))
-	/*	buf := make([]byte, 5)
-		arr := make([]byte, len(strconv.Itoa(freq)), 10)
-		for i := len(arr) - 1; freq > 0; i-- {
-			arr[i] = byte(freq % 10)
-			freq = int(freq / 10)
-		}
-		for len(arr) < 10 {
-			arr = addElementToFirstIndex(arr, 0)
-		}
-		dig := 5
-		for i := 0; i < 10; i = i + 2 {
-			dig--
-			buf[dig] = (arr[i] * 10) + arr[i+1]
-		}
-	*/
-	println(buf)
+func setFreque(port serial.Port, p *civCommand, freq int) error {
+	correctMsg := false
+	attempt := 0
+	buf := make([]byte, 5)
+	freqBuf := intToBcdArr(freq)
+	for !correctMsg {
+		if attempt < 10 {
+			attempt++
+			port.ResetInputBuffer()
+			time.Sleep(time.Duration(100) * time.Millisecond)
 
+			//   copy(a[len(a)-len(b):], b)
+			buf = []byte{byte(preambleCmd), byte(preambleCmd), 0x62, byte(controllerAddrCmd), 0x05}
+			for i := 0; i < len(freqBuf); i++ {
+				buf = append(buf, freqBuf[i])
+
+			}
+			buf = append(buf, byte(endMsgCmd))
+			//buf := append(buf[len(buf)-len(freqBuf):len(buf)-len(freqBuf)], freqBuf...)
+			//		copy(buf[len(buf)-len(freqBuf):], freqBuf)
+			serialDataExchange.WriteSerialPort(port, buf)
+			time.Sleep(time.Duration(100) * time.Millisecond)
+			/*	_ = serialDataExchange.ReadSerialPort(port, readBuff)
+					for _, value := range readBuff {
+						if value == 0xfd {
+							n++
+						}
+					}
+					if n < 2 {
+						n = 0
+						for i, _ := range readBuff {
+							readBuff[i] = 0x00
+						}
+					} else {
+						correctMsg = true
+					}
+				} else {
+					return readBuff, errors.New("can't connect Transiver")
+				}
+			*/
+		}
+	}
+	/*for i := 0; i < n; i++ {
+		idxCmd := slices.Index(readBuff, cmd)
+		idxEnd := slices.Index(readBuff, byte(endMsgCmd))
+		if idxEnd != -1 {
+			if bytes.Equal(readBuff[:idxEnd+1], arg[:len(arg)]) {
+				readBuff = readBuff[idxEnd+1 : len(readBuff)]
+			} else {
+				dataBuff = readBuff[idxCmd:idxEnd]
+				dataBuff = append(make([]byte, 0), dataBuff[1:]...)
+			}
+		}
+	}
+	*/
+	/*	buff, err := commandSend(port, p, FREQ)
+		if err != nil {
+			return 0, err
+		}
+		buffRevers := make([]byte, len(buff))
+		j := 0
+		for i := len(buff) - 1; i > -1; i-- {
+			buffRevers[j] = buff[i]
+			j++
+		}
+		return bcdToInt(buffRevers) / 1000, err
+	*/
+	return nil
+}
+
+func intToBcdArr(freq int) []byte {
+	buf := make([]byte, 5)
+	arr := make([]byte, len(strconv.Itoa(freq)), 10)
+	for i := len(arr) - 1; freq > 0; i-- {
+		arr[i] = byte(freq % 10)
+		freq = int(freq / 10)
+	}
+	for len(arr) < 10 {
+		arr = addElementToFirstIndex(arr, 0)
+	}
+
+	dig := 4
+	for i := 0; i < 10; i = i + 2 {
+		buf[dig] = bcd.FromUint8((arr[i] * 10) + arr[i+1])
+		dig--
+	}
+	return buf
 }
 
 func bcdToInt(buff []byte) uint32 {
@@ -312,7 +381,12 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	serialAcces.Lock()
 	fmt.Println("IC78 Connect")
 	port.ResetInputBuffer()
-	setFreque(212340)
+	//intToBcdArr(21234)
+	var myic78civCommand *civCommand
+	err := setFreque(port, myic78civCommand, 21234)
+	if err == nil {
+		fmt.Println("OK")
+	}
 	/*
 		var myic78civCommand *civCommand
 		addr, err := requestTransiverAddr(port)
