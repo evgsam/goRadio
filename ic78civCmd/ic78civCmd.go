@@ -107,10 +107,36 @@ func printByte(data []byte) {
 	fmt.Println()
 }
 
+func setMode(port serial.Port, p *civCommand, mode string) error {
+	var arg byte
+	switch mode {
+	case "LSB":
+		arg = 0x00
+	case "USB":
+		arg = 0x01
+	case "AM":
+		arg = 0x02
+	case "RTTY":
+		arg = 0x04
+	case "CW":
+		arg = 0x07
+	}
+	buf := make([]byte, 6)
+	buf = []byte{byte(preambleCmd), byte(preambleCmd), p.transiverAddr, byte(controllerAddrCmd), byte(setModeCmd), arg, byte(endMsgCmd)}
+	_, readBuff, err := sendDataToTransiver(port, buf)
+	if err != nil {
+		return err
+	}
+	if slices.Index(readBuff, byte(ngCode)) > 0 {
+		return errors.New("transceiver sent NG")
+	}
+	return nil
+}
+
 func setFreque(port serial.Port, p *civCommand, freq int) error {
 	freqBuf := intFreqToBcdArr(freq)
 	buf := make([]byte, 11)
-	buf = []byte{byte(preambleCmd), byte(preambleCmd), 0x62, byte(controllerAddrCmd), 0x05}
+	buf = []byte{byte(preambleCmd), byte(preambleCmd), p.transiverAddr, byte(controllerAddrCmd), byte(setFreqCmd)}
 	for i := 0; i < len(freqBuf); i++ {
 		buf = append(buf, freqBuf[i])
 
@@ -405,6 +431,14 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	} else {
 		fmt.Println("freque set")
 	}
+	err = setMode(port, myic78civCommand, "AM")
+	if err != nil {
+		serialAcces.Unlock()
+		return err
+	} else {
+		fmt.Println("mode set")
+	}
+
 	serialAcces.Unlock()
 	return nil
 
