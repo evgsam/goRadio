@@ -455,6 +455,13 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	} else {
 		fmt.Println("mode set")
 	}
+	err = setAF(port, myic78civCommand, 93)
+	if err != nil {
+		serialAcces.Unlock()
+		return err
+	} else {
+		fmt.Println("af level set")
+	}
 
 	serialAcces.Unlock()
 	return nil
