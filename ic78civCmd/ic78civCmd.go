@@ -107,6 +107,23 @@ func printByte(data []byte) {
 	fmt.Println()
 }
 
+func setAF(port serial.Port, p *civCommand, afLevel int) error {
+	buf := make([]byte, 7)
+	levelBuf := make([]byte, 2)
+	afLevel = (afLevel * 255) / 100
+	levelBuf[0] = bcd.FromUint8(uint8(afLevel))
+	buf = []byte{byte(preambleCmd), byte(preambleCmd), p.transiverAddr, byte(controllerAddrCmd), byte(afrfsqlCmd),
+		byte(afSubCmd), byte(afLevel), byte(endMsgCmd)}
+	_, readBuff, err := sendDataToTransiver(port, buf)
+	if err != nil {
+		return err
+	}
+	if slices.Index(readBuff, byte(ngCode)) > 0 {
+		return errors.New("transceiver sent NG")
+	}
+	return nil
+}
+
 func setMode(port serial.Port, p *civCommand, mode string) error {
 	var arg byte
 	switch mode {
@@ -121,7 +138,7 @@ func setMode(port serial.Port, p *civCommand, mode string) error {
 	case "CW":
 		arg = 0x07
 	}
-	buf := make([]byte, 6)
+	buf := make([]byte, 7)
 	buf = []byte{byte(preambleCmd), byte(preambleCmd), p.transiverAddr, byte(controllerAddrCmd), byte(setModeCmd), arg, byte(endMsgCmd)}
 	_, readBuff, err := sendDataToTransiver(port, buf)
 	if err != nil {
