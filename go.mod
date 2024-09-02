@@ -14,5 +14,6 @@ require (
 	github.com/mattn/go-runewidth v0.0.9 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/nsf/termbox-go v1.1.1 // indirect
+	github.com/skanehira/gocui-component v0.0.0-20190406233618-9b1c71353c96 // indirect
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261 // indirect
 )
