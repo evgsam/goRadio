@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"goRadio/ic78civCmd"
+	"goRadio/menu"
 	"goRadio/serialDataExchange"
 	"sync"
 	"time"
@@ -16,6 +17,8 @@ func main() {
 		fmt.Println(err)
 	}
 	*/
+	menu.Menu()
+
 	var port serial.Port
 	var serialAccess sync.Mutex
 	port = serialDataExchange.OpenSerialPort(19200, 8)
