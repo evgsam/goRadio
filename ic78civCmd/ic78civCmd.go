@@ -107,13 +107,23 @@ func printByte(data []byte) {
 	fmt.Println()
 }
 
-func setAF(port serial.Port, p *civCommand, afLevel int) error {
+func setAfRfSql(port serial.Port, p *civCommand, c commandName, level int) error {
+	levelBuf := intToArr((level*255)/100, 4)
+	for len(levelBuf) < 4 {
+		levelBuf = addElementToFirstIndex(levelBuf, 0)
+	}
+	var subcmd byte
+	switch c {
+	case af:
+		subcmd = byte(afSubCmd)
+	case rf:
+		subcmd = byte(rfSubCmd)
+	case sql:
+		subcmd = byte(sqlSubCmd)
+	}
 	buf := make([]byte, 7)
-	levelBuf := make([]byte, 2)
-	afLevel = (afLevel * 255) / 100
-	levelBuf[0] = bcd.FromUint8(uint8(afLevel))
 	buf = []byte{byte(preambleCmd), byte(preambleCmd), p.transiverAddr, byte(controllerAddrCmd), byte(afrfsqlCmd),
-		byte(afSubCmd), byte(afLevel), byte(endMsgCmd)}
+		subcmd, byteArrToBCD(levelBuf, 2)[1], byteArrToBCD(levelBuf, 2)[0], byte(endMsgCmd)}
 	_, readBuff, err := sendDataToTransiver(port, buf)
 	if err != nil {
 		return err
@@ -169,24 +179,53 @@ func setFreque(port serial.Port, p *civCommand, freq int) error {
 	return nil
 }
 
-func intFreqToBcdArr(freq int) []byte {
-	buf := make([]byte, 5)
-	arr := make([]byte, len(strconv.Itoa(freq)), 10)
-	for i := len(arr) - 1; freq > 0; i-- {
-		arr[i] = byte(freq % 10)
-		freq = int(freq / 10)
+func setPreamp(port serial.Port, p *civCommand, preamp string) error {
+	var cmd byte
+	switch preamp {
+	case "OFF":
+		cmd = 0x00
+	case "P.AMP":
+		cmd = 0x01
 	}
-	arr = append(arr, 0x00)
-	for len(arr) < 10 {
-		arr = addElementToFirstIndex(arr, 0)
+	buf := make([]byte, 7)
+	buf = []byte{byte(preambleCmd), byte(preambleCmd), p.transiverAddr, byte(controllerAddrCmd), byte(preampCmd), byte(preampSubCmd), cmd, byte(endMsgCmd)}
+	_, readBuff, err := sendDataToTransiver(port, buf)
+	if err != nil {
+		return err
 	}
+	if slices.Index(readBuff, byte(ngCode)) > 0 {
+		return errors.New("transceiver sent NG")
+	}
+	return nil
 
+}
+
+func intToArr(data int, size uint8) []byte {
+	arr := make([]byte, len(strconv.Itoa(data)), size)
+	for i := len(arr) - 1; data > 0; i-- {
+		arr[i] = byte(data % 10)
+		data = int(data / 10)
+	}
+	return arr
+}
+
+func byteArrToBCD(arr []byte, size uint8) []byte {
+	buf := make([]byte, size)
 	dig := len(arr)/2 - 1
 	for i := 0; i < len(arr)-1; i = i + 2 {
 		buf[dig] = bcd.FromUint8((arr[i] * 10) + arr[i+1])
 		dig--
 	}
 	return buf
+}
+
+func intFreqToBcdArr(freq int) []byte {
+	arr := intToArr(freq, 10)
+	arr = append(arr, 0x00)
+	for len(arr) < 10 {
+		arr = addElementToFirstIndex(arr, 0)
+	}
+	return byteArrToBCD(arr, 5)
 }
 
 func bcdToInt(buff []byte) uint32 {
@@ -413,26 +452,26 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	} else {
 		fmt.Println("ATT status:", att)
 	}
-	af, err := requestAFLevel(port, myic78civCommand)
+	afLevel, err := requestAFLevel(port, myic78civCommand)
 	if err != nil {
 		serialAcces.Unlock()
 		return err
 	} else {
-		fmt.Printf("AF level: %d % \n", af)
+		fmt.Printf("AF level: %d % \n", afLevel)
 	}
-	rf, err := requestRFLevel(port, myic78civCommand)
+	rfLevel, err := requestRFLevel(port, myic78civCommand)
 	if err != nil {
 		serialAcces.Unlock()
 		return err
 	} else {
-		fmt.Printf("RF level: %d % \n", rf)
+		fmt.Printf("RF level: %d % \n", rfLevel)
 	}
-	sql, err := requestSQLLevel(port, myic78civCommand)
+	sqlLevel, err := requestSQLLevel(port, myic78civCommand)
 	if err != nil {
 		serialAcces.Unlock()
 		return err
 	} else {
-		fmt.Printf("SQL level: %d % \n", sql)
+		fmt.Printf("SQL level: %d % \n", sqlLevel)
 	}
 	preamp, err := requestPreamp(port, myic78civCommand)
 	if err != nil {
@@ -441,7 +480,7 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	} else {
 		fmt.Println("Preamp status:", preamp)
 	}
-	err = setFreque(port, myic78civCommand, 3000)
+	err = setFreque(port, myic78civCommand, 3501)
 	if err != nil {
 		serialAcces.Unlock()
 		return err
@@ -455,12 +494,35 @@ func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	} else {
 		fmt.Println("mode set")
 	}
-	err = setAF(port, myic78civCommand, 93)
+	err = setAfRfSql(port, myic78civCommand, af, 93)
 	if err != nil {
 		serialAcces.Unlock()
 		return err
 	} else {
 		fmt.Println("af level set")
+	}
+
+	err = setAfRfSql(port, myic78civCommand, rf, 99)
+	if err != nil {
+		serialAcces.Unlock()
+		return err
+	} else {
+		fmt.Println("rf level set")
+	}
+	err = setAfRfSql(port, myic78civCommand, sql, 69)
+	if err != nil {
+		serialAcces.Unlock()
+		return err
+	} else {
+		fmt.Println("sql level set")
+	}
+
+	err = setPreamp(port, myic78civCommand, "P.AMP")
+	if err != nil {
+		serialAcces.Unlock()
+		return err
+	} else {
+		fmt.Println("P.AMP set")
 	}
 
 	serialAcces.Unlock()
