@@ -7,13 +7,15 @@ package menu
 import (
 	"errors"
 	"fmt"
+	component "goRadio/gocui-component"
 	"log"
 
-	"github.com/awesome-gocui/gocui"
+	"github.com/jroimartin/gocui"
+	//"github.com/awesome-gocui/gocui"
 )
 
 func Menu() {
-	g, err := gocui.NewGui(gocui.OutputNormal, true)
+	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -39,14 +41,14 @@ func layout(g *gocui.Gui) error {
 
 	// Overlap (front)
 
-	if v, err := g.SetView("v0", 0, 0, 50, 7, 0); err != nil {
+	if v, err := g.SetView("v0", 0, 0, 50, 7); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
 		v.Title = " IC-78 Information "
 	}
 
-	if v, err := g.SetView("v1", 1, 1, 16, 3, 0); err != nil {
+	if v, err := g.SetView("v1", 1, 1, 16, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -57,7 +59,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "Disconnected!")
 	}
 
-	if v, err := g.SetView("v2", 17, 1, 27, 3, 0); err != nil {
+	if v, err := g.SetView("v2", 17, 1, 27, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -65,7 +67,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "RTTY")
 	}
 
-	if v, err := g.SetView("v3", 28, 1, 38, 3, 0); err != nil {
+	if v, err := g.SetView("v3", 28, 1, 38, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -73,7 +75,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "YES")
 	}
 
-	if v, err := g.SetView("v4", 39, 1, 49, 3, 0); err != nil {
+	if v, err := g.SetView("v4", 39, 1, 49, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -81,7 +83,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "P.AMP")
 	}
 
-	if v, err := g.SetView("v5", 1, 4, 16, 6, 0); err != nil {
+	if v, err := g.SetView("v5", 1, 4, 16, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -89,7 +91,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "2999999 Hz")
 	}
 
-	if v, err := g.SetView("v6", 17, 4, 27, 6, 0); err != nil {
+	if v, err := g.SetView("v6", 17, 4, 27, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -97,7 +99,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "100 %")
 	}
 
-	if v, err := g.SetView("v7", 28, 4, 38, 6, 0); err != nil {
+	if v, err := g.SetView("v7", 28, 4, 38, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -105,7 +107,7 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "100 %")
 	}
 
-	if v, err := g.SetView("v8", 39, 4, 49, 6, 0); err != nil {
+	if v, err := g.SetView("v8", 39, 4, 49, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -113,14 +115,18 @@ func layout(g *gocui.Gui) error {
 		fmt.Fprint(v, "100 %")
 	}
 
-	if v, err := g.SetView("v9", 0, 8, 50, 12, 0); err != nil {
+	component.NewSelect(g, "Mode:", 2, 9, 0, 5).
+		AddOptions("LSB", "USB", "AM", "RTTY", "CW").
+		Draw()
+
+	if v, err := g.SetView("v9", 0, 8, 50, 12); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
 		v.Title = " IC-78 Set "
 	}
 
-	if v, err := g.SetView("v10", 1, 9, 16, 11, 0); err != nil {
+	if v, err := g.SetView("v10", 1, 9, 16, 11); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}

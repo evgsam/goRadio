@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/awesome-gocui/gocui v1.1.0 // indirect
+	//github.com/awesome-gocui/gocui v1.1.0 // indirect
 	github.com/creack/goselect v0.1.2 // indirect
 	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gdamore/tcell/v2 v2.4.0 // indirect
