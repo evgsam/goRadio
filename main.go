@@ -1,19 +1,10 @@
 package main
 
-import (
-	"fmt"
-	"goRadio/ic78civCmd"
-	"goRadio/menu"
-	"goRadio/serialDataExchange"
-	"sync"
-	"time"
-
-	"go.bug.st/serial"
-)
+import "goRadio/menu"
 
 func main() {
 	menu.Menu()
-	var port serial.Port
+	/*var port serial.Port
 	var serialAccess sync.Mutex
 	port = serialDataExchange.OpenSerialPort(19200, 8)
 	go ic78civCmd.DataPollingGorutine(port, &serialAccess)
@@ -26,4 +17,5 @@ func main() {
 	for {
 		time.Sleep(10 * time.Second)
 	}
+	*/
 }
