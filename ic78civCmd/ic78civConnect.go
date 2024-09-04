@@ -23,7 +23,7 @@ func newIc78civCommand(transiverAddr byte) *civCommand {
 
 func IC78connect(port serial.Port, serialAcces *sync.Mutex) error {
 	serialAcces.Lock()
-	fmt.Println("IC78 Connect")
+	//fmt.Println("IC78 Connect")
 	port.ResetInputBuffer()
 	var myic78civCommand *civCommand
 	addr, err := requestTransiverAddr(port)
