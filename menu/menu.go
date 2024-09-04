@@ -7,6 +7,7 @@ package menu
 import (
 	"errors"
 	"fmt"
+	datastruct "goRadio/dataStruct"
 	component "goRadio/gocui-component"
 	"log"
 
@@ -14,7 +15,10 @@ import (
 	//"github.com/awesome-gocui/gocui"
 )
 
-func Menu() {
+func Menu(ch chan *datastruct.RadioSettings) {
+	//var myRadioSettings radioSettings
+	myRadioSettings := <-ch
+	fmt.Println(myRadioSettings.Mode)
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)

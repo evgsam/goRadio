@@ -2,6 +2,7 @@ package ic78civCmd
 
 import (
 	"fmt"
+	datastruct "goRadio/dataStruct"
 	"goRadio/menu"
 	"strconv"
 	"sync"
@@ -20,19 +21,6 @@ type civCommand struct {
 	requestRFLevel  []byte
 	requestSQLLevel []byte
 	requestPreamp   []byte
-}
-
-type RadioSettings struct {
-	Err    error
-	Status string
-	Mode   string
-	ATT    string
-	Preamp string
-	Freque uint32
-	AF     uint32
-	RF     uint32
-	SQL    uint32
-	TrAddr byte
 }
 
 type cmdValue byte
@@ -71,20 +59,20 @@ const (
 )
 
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
-	ch := make(chan *RadioSettings, 10)
+	ch := make(chan *datastruct.RadioSettings, 10)
 	go menu.Menu(ch)
 	for {
 		serialAcces.Lock()
 		port.ResetInputBuffer()
-
 		var myic78civCommand *civCommand
 		adr, err := requestTransiverAddr(port)
 		if err != nil {
 			for err != nil {
-				ch <- &RadioSettings{
+				ch <- &datastruct.RadioSettings{
 					Err:    err,
 					Status: "Error",
 				}
+
 				adr, err = requestTransiverAddr(port)
 				time.Sleep(50 * time.Millisecond)
 			}
@@ -97,10 +85,11 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 		af, _ := requestAFLevel(port, myic78civCommand)
 		rf, _ := requestRFLevel(port, myic78civCommand)
 		sql, _ := requestSQLLevel(port, myic78civCommand)
-		//fmt.Printf("transiver connected, addr:= %#x \n", adr)//
+
+		fmt.Printf("transiver connected, addr:= %#x \n", adr) //
 		port.ResetInputBuffer()
 		serialAcces.Unlock()
-		ch <- &RadioSettings{
+		ch <- &datastruct.RadioSettings{
 			Err:    err,
 			Status: "Connect",
 			Mode:   mode,
@@ -112,7 +101,6 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 			SQL:    sql,
 			TrAddr: adr,
 		}
-
 		time.Sleep(1 * time.Second)
 	}
 }

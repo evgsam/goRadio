@@ -9,11 +9,6 @@ import (
 	"go.bug.st/serial"
 )
 
-type SerialPortList struct {
-	portNumber  uint8
-	portListMap map[uint8]string
-}
-
 func main() {
 
 	//menu.SerialPortSelectMenu()
