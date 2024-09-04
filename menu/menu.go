@@ -32,10 +32,11 @@ func Menu() {
 	}
 }
 
-func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
-}
-
+/*
+	func quit(g *gocui.Gui, v *gocui.View) error {
+		return gocui.ErrQuit
+	}
+*/
 func layout(g *gocui.Gui) error {
 	//maxX, maxY := g.Size()
 

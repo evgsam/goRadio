@@ -1,13 +1,15 @@
 package serialDataExchange
 
 import (
-	"fmt"
+	"goRadio/menu"
 	"log"
 
 	"go.bug.st/serial"
 )
 
 func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
+	serilListCh := make(chan []string)
+	go menu.SerialPortSelectMenu(serilListCh)
 	ports, err := serial.GetPortsList()
 	var portsnum int
 	if err != nil {
@@ -16,17 +18,14 @@ func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
 	if len(ports) == 0 {
 		log.Fatal("No serial ports found!")
 	}
-	fmt.Print("Ports list: \n")
-	for _, port := range ports {
-		fmt.Printf("Port #%d: %v\n", portsnum, port)
-		portsnum++
-	}
+	serilListCh <- ports
+	myPort := <-serilListCh
 
-	if len(ports) > 1 {
-		fmt.Print("Please, select port:")
-		fmt.Scan(&portsnum)
-	} else {
-		portsnum = 0
+	for i, val := range ports {
+		if val == myPort[0] {
+			portsnum = i
+			break
+		}
 	}
 	mode := &serial.Mode{
 		BaudRate: BaudRate,
