@@ -8,8 +8,8 @@ import (
 )
 
 func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
-	serilListCh := make(chan []string)
-	go menu.SerialPortSelectMenu(serilListCh)
+	serialListCh := make(chan []string)
+	go menu.SerialPortSelectMenu(serialListCh)
 	ports, err := serial.GetPortsList()
 	var portsnum int
 	if err != nil {
@@ -18,9 +18,9 @@ func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
 	if len(ports) == 0 {
 		log.Fatal("No serial ports found!")
 	}
-	serilListCh <- ports
-	myPort := <-serilListCh
-
+	serialListCh <- ports
+	myPort := <-serialListCh
+	close(serialListCh)
 	for i, val := range ports {
 		if val == myPort[0] {
 			portsnum = i
