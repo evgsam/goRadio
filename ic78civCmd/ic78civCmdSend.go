@@ -13,7 +13,7 @@ import (
 func sendDataToTransiver(port serial.Port, arg []byte) (int, []byte, error) {
 	n := 0
 	attempt := 0
-	readBuff := make([]byte, 30)
+	readBuff := make([]byte, 300)
 	correctMsg := false
 	for !correctMsg {
 		if attempt < 10 {
