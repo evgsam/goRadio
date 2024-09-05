@@ -60,11 +60,13 @@ const (
 
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 	ch := make(chan *datastruct.RadioSettings, 10)
-	go menu.Menu(ch)
+	var menuAccess sync.Mutex
+	go menu.Menu(ch, &menuAccess)
 	for {
 		serialAcces.Lock()
+		menuAccess.Lock()
 		port.ResetInputBuffer()
-		var myic78civCommand *civCommand
+		//var myic78civCommand *civCommand
 		adr, err := requestTransiverAddr(port)
 		if err != nil {
 			for err != nil {
@@ -77,7 +79,7 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 				time.Sleep(50 * time.Millisecond)
 			}
 		}
-		myic78civCommand = newIc78civCommand(adr)
+		myic78civCommand := newIc78civCommand(adr)
 		mode, _ := requestMode(port, myic78civCommand)
 		att, _ := requestATT(port, myic78civCommand)
 		preamp, _ := requestPreamp(port, myic78civCommand)
@@ -86,9 +88,10 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 		rf, _ := requestRFLevel(port, myic78civCommand)
 		sql, _ := requestSQLLevel(port, myic78civCommand)
 
-		fmt.Printf("transiver connected, addr:= %#x \n", adr) //
+		//fmt.Printf("transiver connected, addr:= %#x \n", adr) //
 		port.ResetInputBuffer()
 		serialAcces.Unlock()
+
 		ch <- &datastruct.RadioSettings{
 			Err:    err,
 			Status: "Connect",
@@ -101,6 +104,7 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 			SQL:    sql,
 			TrAddr: adr,
 		}
+		menuAccess.Unlock()
 		time.Sleep(1 * time.Second)
 	}
 }
