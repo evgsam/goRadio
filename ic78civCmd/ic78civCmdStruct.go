@@ -30,6 +30,8 @@ type cmdValue byte
 const (
 	controllerAddrCmd cmdValue = 0xe1
 	preambleCmd       cmdValue = 0xfe
+	sendFreqCmd       cmdValue = 0x00
+	sendModeCmd       cmdValue = 0x01
 	readFreqCmd       cmdValue = 0x03
 	readModeCmd       cmdValue = 0x04
 	setFreqCmd        cmdValue = 0x05
@@ -59,6 +61,12 @@ const (
 	sql
 	preamp
 )
+
+var myic78civCommand *civCommand
+
+func getTransiverAddr() byte {
+	return myic78civCommand.transiverAddr
+}
 
 func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 	ch := make(chan *datastruct.RadioSettings, 10)
