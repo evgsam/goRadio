@@ -13,7 +13,7 @@ import (
 func sendDataToTransiver(port serial.Port, arg []byte) (int, []byte, error) {
 	n := 0
 	attempt := 0
-	readBuff := make([]byte, 300)
+	readBuff := make([]byte, maxReadBuff)
 	correctMsg := false
 	for !correctMsg {
 		if attempt < 10 {
@@ -44,7 +44,7 @@ func sendDataToTransiver(port serial.Port, arg []byte) (int, []byte, error) {
 }
 
 func commandSend(port serial.Port, p *civCommand, c commandName) ([]byte, error) {
-	readBuff := make([]byte, 30)
+	readBuff := make([]byte, maxReadBuff)
 	dataBuff := make([]byte, 7)
 	var arg []byte
 	var cmd byte
@@ -81,6 +81,9 @@ func commandSend(port serial.Port, p *civCommand, c commandName) ([]byte, error)
 	for i := 0; i < n; i++ {
 		idxCmd := slices.Index(readBuff, cmd)
 		idxEnd := slices.Index(readBuff, byte(endMsgCmd))
+		if idxCmd > idxEnd {
+			readBuff = readBuff[idxCmd+1 : len(readBuff)]
+		}
 		if idxEnd != -1 {
 			if bytes.Equal(readBuff[:idxEnd+1], arg[:len(arg)]) {
 				readBuff = readBuff[idxEnd+1 : len(readBuff)]

@@ -12,6 +12,8 @@ import (
 	"go.bug.st/serial"
 )
 
+const maxReadBuff = 100
+
 type civCommand struct {
 	transiverAddr   byte
 	requestFreque   []byte
