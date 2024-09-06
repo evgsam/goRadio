@@ -76,7 +76,6 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 					Err:    err,
 					Status: "Error",
 				}
-
 				adr, err = requestTransiverAddr(port)
 				time.Sleep(50 * time.Millisecond)
 			}
@@ -90,7 +89,6 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 		rf, _ := requestRFLevel(port, myic78civCommand)
 		sql, _ := requestSQLLevel(port, myic78civCommand)
 
-		//fmt.Printf("transiver connected, addr:= %#x \n", adr) //
 		port.ResetInputBuffer()
 		serialAcces.Unlock()
 
