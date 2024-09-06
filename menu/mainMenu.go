@@ -5,7 +5,6 @@ import (
 	"fmt"
 	datastruct "goRadio/dataStruct"
 	"log"
-	"sync"
 
 	"github.com/jroimartin/gocui"
 	//"github.com/awesome-gocui/gocui"
@@ -22,7 +21,7 @@ const (
 	SQL    string = "SQL"
 )
 
-func dataToDisplay(g *gocui.Gui, ch chan *datastruct.RadioSettings, menuAccess *sync.Mutex) {
+func dataToDisplay(g *gocui.Gui, ch chan *datastruct.RadioSettings) {
 	for {
 		myRadioSettings := <-ch
 		g.Update(func(g *gocui.Gui) error {
@@ -86,7 +85,7 @@ func dataToDisplay(g *gocui.Gui, ch chan *datastruct.RadioSettings, menuAccess *
 	}
 }
 
-func Menu(ch chan *datastruct.RadioSettings, menuAccess *sync.Mutex) {
+func Menu(ch chan *datastruct.RadioSettings) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -98,7 +97,7 @@ func Menu(ch chan *datastruct.RadioSettings, menuAccess *sync.Mutex) {
 	}
 
 	g.SetManagerFunc(layout)
-	go dataToDisplay(g, ch, menuAccess)
+	go dataToDisplay(g, ch)
 
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
