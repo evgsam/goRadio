@@ -3,7 +3,6 @@ package menu
 import (
 	"errors"
 	"fmt"
-	datastruct "goRadio/dataStruct"
 	"log"
 
 	"github.com/jroimartin/gocui"
@@ -21,71 +20,97 @@ const (
 	SQL    string = "SQL"
 )
 
-func dataToDisplay(g *gocui.Gui, ch chan *datastruct.RadioSettings) {
+type commandName int
+
+const (
+	freqRead commandName = iota
+	taddr
+	mode
+	att
+	af
+	rf
+	sql
+	preamp
+	status
+)
+
+func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	for {
-		myRadioSettings := <-ch
+		m := <-ch
 		g.Update(func(g *gocui.Gui) error {
-			v, err := g.View(Status)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.Status)
-			v, err = g.View(Mode)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.Mode)
+			for key, value := range m {
+				switch key {
+				case byte(status):
+					v, err := g.View(Status)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
 
-			v, err = g.View(ATT)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.ATT)
+				case byte(mode):
+					v, err := g.View(Mode)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
 
-			v, err = g.View(Preamp)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.Preamp)
+				case byte(att):
+					v, err := g.View(ATT)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
 
-			v, err = g.View(Freque)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.Freque)
+				case byte(preamp):
+					v, err := g.View(Preamp)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
 
-			v, err = g.View(AF)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.AF)
+				case byte(freqRead):
+					v, err := g.View(Freque)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, m[byte(freqRead)])
 
-			v, err = g.View(RF)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.RF)
+				case byte(af):
+					v, err := g.View(AF)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
 
-			v, err = g.View(SQL)
-			if err != nil {
-				return err
-			}
-			v.Clear()
-			fmt.Fprintln(v, myRadioSettings.SQL)
+				case byte(rf):
+					v, err := g.View(RF)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
 
+				case byte(sql):
+					v, err := g.View(SQL)
+					if err != nil {
+						return err
+					}
+					v.Clear()
+					fmt.Fprintln(v, value)
+				}
+			}
 			return nil
 		})
 	}
 }
 
-func Menu(ch chan *datastruct.RadioSettings) {
+func Menu(ch chan map[byte]string) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)

@@ -1,6 +1,7 @@
 package ic78civCmd
 
 import (
+	"fmt"
 	datastruct "goRadio/dataStruct"
 	"goRadio/menu"
 	"goRadio/serialDataExchange"
@@ -22,7 +23,28 @@ var (
 	adr_data        byte
 )
 
+func dataRequest(port serial.Port, myic78civCommand *civCommand) {
+	for {
+		commandSend_(port, myic78civCommand, freqRead)
+		time.Sleep(500 * time.Millisecond)
+		commandSend_(port, myic78civCommand, mode)
+		time.Sleep(500 * time.Millisecond)
+		commandSend_(port, myic78civCommand, att)
+		time.Sleep(500 * time.Millisecond)
+		commandSend_(port, myic78civCommand, af)
+		time.Sleep(500 * time.Millisecond)
+		commandSend_(port, myic78civCommand, rf)
+		time.Sleep(500 * time.Millisecond)
+		commandSend_(port, myic78civCommand, sql)
+		time.Sleep(500 * time.Millisecond)
+		commandSend_(port, myic78civCommand, preamp)
+		time.Sleep(2 * time.Second)
+	}
+
+}
+
 func splitByFD(adr byte, data []byte) []byte {
+	//printByte(data)
 	start := 0
 	buffer := make([]byte, 0)
 	if data[0] == 0xfe && data[1] == 0xfe { // Проверка на начало пакета
@@ -38,10 +60,11 @@ func splitByFD(adr byte, data []byte) []byte {
 	}
 	buffer = append(make([]byte, 0), buffer[2:]...)
 	if buffer[0] == adr {
-		return make([]byte, 0)
+		return []byte{0x99}
 	}
 	return append(make([]byte, 0), buffer[2:]...)
 }
+
 func switchMode(data byte) string {
 	switch data {
 	case 0x00:
@@ -68,11 +91,11 @@ func switchATT(data byte) string {
 	return ""
 }
 
-func detectionAFRFSQL(buffer []byte) uint32 {
-	return (bcdToInt(buffer) * 100) / 254
+func detectionAFRFSQL(buffer []byte) string {
+	return fmt.Sprintf("%d", (bcdToInt(buffer)*100)/254)
 }
 
-func detectionFreque(buffer []byte) uint32 {
+func detectionFreque(buffer []byte) string {
 	buffer = append(make([]byte, 0), buffer[1:]...)
 	buffRevers := make([]byte, len(buffer))
 	j := 0
@@ -80,42 +103,62 @@ func detectionFreque(buffer []byte) uint32 {
 		buffRevers[j] = buffer[i]
 		j++
 	}
-	return bcdToInt(buffRevers) / 1000
+	f := bcdToInt(buffRevers) / 1000
+	precisionAfterComma := 2  // количество знаков после запятой
+	fractionalPartDigits := 6 // количество цифр в дробной части
+	return fmt.Sprintf("%.*f.%0*d", precisionAfterComma, float64(f)/100, fractionalPartDigits, f%100)
 }
 
-func parser(buffer []byte, ch chan *datastruct.RadioSettings) {
+func parser(buffer []byte, ch chan map[byte]string) {
 	switch buffer[0] {
+	case 0x99:
+		ch <- map[byte]string{
+			byte(status): "disconnect",
+		}
 	case byte(sendFreqCmd):
-		freq_data = detectionFreque(buffer)
+		ch <- map[byte]string{
+			byte(freqRead): detectionFreque(buffer),
+		}
 	case byte(readFreqCmd):
-		freq_data = detectionFreque(buffer)
+		ch <- map[byte]string{
+			byte(freqRead): detectionFreque(buffer),
+		}
 	case byte(sendModeCmd):
-		mode_data = switchMode(buffer[1])
+		ch <- map[byte]string{
+			byte(mode): switchMode(buffer[1]),
+		}
 	case byte(readModeCmd):
-		mode_data = switchMode(buffer[1])
+		ch <- map[byte]string{
+			byte(mode): switchMode(buffer[1]),
+		}
 	case byte(attCmd):
 		mode_data = switchATT(buffer[1])
+	case byte(preamp):
+		switch buffer[2] {
+		case 0x00:
+			ch <- map[byte]string{
+				byte(preamp): "OFF",
+			}
+		case 0x01:
+			ch <- map[byte]string{
+				byte(preamp): "P.AMP",
+			}
+		}
 	case byte(afrfsqlCmd):
 		switch buffer[1] {
 		case byte(afSubCmd):
-			af_data = detectionAFRFSQL(buffer[2:3])
+			ch <- map[byte]string{
+				byte(af): detectionAFRFSQL(buffer[2:3]),
+			}
 		case byte(rfSubCmd):
-			rf_data = detectionAFRFSQL(buffer[2:3])
+			ch <- map[byte]string{
+				byte(rf): detectionAFRFSQL(buffer[2:3]),
+			}
 		case byte(sqlSubCmd):
-			sql_data = detectionAFRFSQL(buffer[2:3])
+			ch <- map[byte]string{
+				byte(sql): detectionAFRFSQL(buffer[2:3]),
+			}
 		}
-	}
-	ch <- &datastruct.RadioSettings{
-		Err:    nil,
-		Status: "Connect",
-		Mode:   mode_data,
-		ATT:    att_data,
-		Preamp: preamp_data,
-		Freque: freq_data,
-		AF:     af_data,
-		RF:     rf_data,
-		SQL:    sql_data,
-		TrAddr: adr_data,
 	}
 }
 
@@ -129,30 +172,9 @@ func CivCmdParser(port serial.Port, serialAcces *sync.Mutex) {
 		}
 	}
 	myic78civCommand = newIc78civCommand(adr_data)
-	mode_data, _ := requestMode(port, myic78civCommand)
-	att_data, _ := requestATT(port, myic78civCommand)
-	preamp_data, _ := requestPreamp(port, myic78civCommand)
-	freq_data, _ := requestFreque(port, myic78civCommand)
-	af_data, _ := requestAFLevel(port, myic78civCommand)
-	rf_data, _ := requestRFLevel(port, myic78civCommand)
-	sql_data, _ := requestSQLLevel(port, myic78civCommand)
-
-	chRadioSettings := make(chan *datastruct.RadioSettings, 30)
+	go dataRequest(port, myic78civCommand)
+	chRadioSettings := make(chan map[byte]string, 300)
 	go menu.Menu(chRadioSettings)
-
-	chRadioSettings <- &datastruct.RadioSettings{
-		Err:    err,
-		Status: "Connect",
-		Mode:   mode_data,
-		ATT:    att_data,
-		Preamp: preamp_data,
-		Freque: freq_data,
-		AF:     af_data,
-		RF:     rf_data,
-		SQL:    sql_data,
-		TrAddr: adr_data,
-	}
-	port.ResetInputBuffer()
 	chSerialData := serialDataExchange.SerialPortPoller(port, serialAcces)
 	for msg := range chSerialData {
 		parser(splitByFD(adr_data, msg), chRadioSettings)

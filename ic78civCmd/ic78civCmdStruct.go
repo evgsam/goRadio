@@ -2,14 +2,9 @@ package ic78civCmd
 
 import (
 	"fmt"
-	datastruct "goRadio/dataStruct"
-	"goRadio/menu"
 	"strconv"
-	"sync"
-	"time"
 
 	"github.com/albenik/bcd"
-	"go.bug.st/serial"
 )
 
 const maxReadBuff = 100
@@ -60,6 +55,7 @@ const (
 	rf
 	sql
 	preamp
+	status
 )
 
 var myic78civCommand *civCommand
@@ -68,7 +64,7 @@ func getTransiverAddr() byte {
 	return myic78civCommand.transiverAddr
 }
 
-func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
+/*func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 	ch := make(chan *datastruct.RadioSettings, 10)
 	go menu.Menu(ch)
 	for {
@@ -112,6 +108,7 @@ func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
 		time.Sleep(1 * time.Second)
 	}
 }
+*/
 
 func addElementToFirstIndex(x []byte, y byte) []byte {
 	x = append([]byte{y}, x...)
