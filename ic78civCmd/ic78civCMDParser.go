@@ -42,18 +42,68 @@ func splitByFD(adr byte, data []byte) []byte {
 	}
 	return append(make([]byte, 0), buffer[2:]...)
 }
+func switchMode(data byte) string {
+	switch data {
+	case 0x00:
+		return "LSB"
+	case 0x01:
+		return "USB"
+	case 0x02:
+		return "AM"
+	case 0x03:
+		return "CW"
+	case 0x04:
+		return "RTTY"
+	}
+	return ""
+}
+
+func switchATT(data byte) string {
+	switch data {
+	case 0x00:
+		return "NO"
+	case 0x20:
+		return "YES"
+	}
+	return ""
+}
+
+func detectionAFRFSQL(buffer []byte) uint32 {
+	return (bcdToInt(buffer) * 100) / 254
+}
+
+func detectionFreque(buffer []byte) uint32 {
+	buffer = append(make([]byte, 0), buffer[1:]...)
+	buffRevers := make([]byte, len(buffer))
+	j := 0
+	for i := len(buffer) - 1; i > -1; i-- {
+		buffRevers[j] = buffer[i]
+		j++
+	}
+	return bcdToInt(buffRevers) / 1000
+}
 
 func parser(buffer []byte, ch chan *datastruct.RadioSettings) {
 	switch buffer[0] {
 	case byte(sendFreqCmd):
-		buffer = append(make([]byte, 0), buffer[1:]...)
-		buffRevers := make([]byte, len(buffer))
-		j := 0
-		for i := len(buffer) - 1; i > -1; i-- {
-			buffRevers[j] = buffer[i]
-			j++
+		freq_data = detectionFreque(buffer)
+	case byte(readFreqCmd):
+		freq_data = detectionFreque(buffer)
+	case byte(sendModeCmd):
+		mode_data = switchMode(buffer[1])
+	case byte(readModeCmd):
+		mode_data = switchMode(buffer[1])
+	case byte(attCmd):
+		mode_data = switchATT(buffer[1])
+	case byte(afrfsqlCmd):
+		switch buffer[1] {
+		case byte(afSubCmd):
+			af_data = detectionAFRFSQL(buffer[2:3])
+		case byte(rfSubCmd):
+			rf_data = detectionAFRFSQL(buffer[2:3])
+		case byte(sqlSubCmd):
+			sql_data = detectionAFRFSQL(buffer[2:3])
 		}
-		freq_data = bcdToInt(buffRevers) / 1000
 	}
 	ch <- &datastruct.RadioSettings{
 		Err:    nil,
@@ -68,6 +118,7 @@ func parser(buffer []byte, ch chan *datastruct.RadioSettings) {
 		TrAddr: adr_data,
 	}
 }
+
 func CivCmdParser(port serial.Port, serialAcces *sync.Mutex) {
 	port.ResetInputBuffer()
 	adr_data, err := requestTransiverAddr(port)
