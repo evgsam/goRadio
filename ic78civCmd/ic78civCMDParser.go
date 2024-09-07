@@ -44,7 +44,6 @@ func dataRequest(port serial.Port, myic78civCommand *civCommand) {
 }
 
 func splitByFD(adr byte, data []byte) []byte {
-	//printByte(data)
 	start := 0
 	buffer := make([]byte, 0)
 	if data[0] == 0xfe && data[1] == 0xfe { // Проверка на начало пакета
@@ -92,7 +91,7 @@ func switchATT(data byte) string {
 }
 
 func detectionAFRFSQL(buffer []byte) string {
-	return fmt.Sprintf("%d", (bcdToInt(buffer)*100)/254)
+	return fmt.Sprintf("%d%%", (bcdToInt(buffer)*100)/254)
 }
 
 func detectionFreque(buffer []byte) string {
@@ -103,10 +102,7 @@ func detectionFreque(buffer []byte) string {
 		buffRevers[j] = buffer[i]
 		j++
 	}
-	f := bcdToInt(buffRevers) / 1000
-	precisionAfterComma := 2  // количество знаков после запятой
-	fractionalPartDigits := 6 // количество цифр в дробной части
-	return fmt.Sprintf("%.*f.%0*d", precisionAfterComma, float64(f)/100, fractionalPartDigits, f%100)
+	return fmt.Sprintf("%d Hz", bcdToInt(buffRevers)/1000)
 }
 
 func parser(buffer []byte, ch chan map[byte]string) {
@@ -132,8 +128,10 @@ func parser(buffer []byte, ch chan map[byte]string) {
 			byte(mode): switchMode(buffer[1]),
 		}
 	case byte(attCmd):
-		mode_data = switchATT(buffer[1])
-	case byte(preamp):
+		ch <- map[byte]string{
+			byte(att): switchATT(buffer[1]),
+		}
+	case byte(preampCmd):
 		switch buffer[2] {
 		case 0x00:
 			ch <- map[byte]string{
@@ -148,15 +146,15 @@ func parser(buffer []byte, ch chan map[byte]string) {
 		switch buffer[1] {
 		case byte(afSubCmd):
 			ch <- map[byte]string{
-				byte(af): detectionAFRFSQL(buffer[2:3]),
+				byte(af): detectionAFRFSQL(buffer[2:4]),
 			}
 		case byte(rfSubCmd):
 			ch <- map[byte]string{
-				byte(rf): detectionAFRFSQL(buffer[2:3]),
+				byte(rf): detectionAFRFSQL(buffer[2:4]),
 			}
 		case byte(sqlSubCmd):
 			ch <- map[byte]string{
-				byte(sql): detectionAFRFSQL(buffer[2:3]),
+				byte(sql): detectionAFRFSQL(buffer[2:4]),
 			}
 		}
 	}
