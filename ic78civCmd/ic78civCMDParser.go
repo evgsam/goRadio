@@ -38,7 +38,7 @@ func dataRequest(port serial.Port, myic78civCommand *civCommand) {
 		commandSend_(port, myic78civCommand, sql)
 		time.Sleep(300 * time.Millisecond)
 		commandSend_(port, myic78civCommand, preamp)
-		time.Sleep(400 * time.Millisecond)
+		time.Sleep(300 * time.Millisecond)
 	}
 
 }
@@ -161,17 +161,10 @@ func parser(buffer []byte, ch chan map[byte]string) {
 }
 
 func CivCmdParser(port serial.Port, serialAcces *sync.Mutex) {
-	port.ResetInputBuffer()
-	adr_data, err := requestTransiverAddr(port)
-	if err != nil {
-		for err != nil {
-			adr_data, err = requestTransiverAddr(port)
-			time.Sleep(50 * time.Millisecond)
-		}
-	}
+	adr_data = 0x62
 	myic78civCommand = newIc78civCommand(adr_data)
 	go dataRequest(port, myic78civCommand)
-	chRadioSettings := make(chan map[byte]string, 300)
+	chRadioSettings := make(chan map[byte]string, 30)
 	go menu.Menu(chRadioSettings)
 	chSerialData := serialDataExchange.SerialPortPoller(port, serialAcces)
 	for msg := range chSerialData {
