@@ -25,19 +25,19 @@ var (
 
 func dataRequest(port serial.Port, myic78civCommand *civCommand) {
 	for {
-		commandSend_(port, myic78civCommand, freqRead)
+		commandSend(port, myic78civCommand, freqRead)
 		time.Sleep(300 * time.Millisecond)
-		commandSend_(port, myic78civCommand, mode)
+		commandSend(port, myic78civCommand, mode)
 		time.Sleep(300 * time.Millisecond)
-		commandSend_(port, myic78civCommand, att)
+		commandSend(port, myic78civCommand, att)
 		time.Sleep(300 * time.Millisecond)
-		commandSend_(port, myic78civCommand, af)
+		commandSend(port, myic78civCommand, af)
 		time.Sleep(300 * time.Millisecond)
-		commandSend_(port, myic78civCommand, rf)
+		commandSend(port, myic78civCommand, rf)
 		time.Sleep(300 * time.Millisecond)
-		commandSend_(port, myic78civCommand, sql)
+		commandSend(port, myic78civCommand, sql)
 		time.Sleep(300 * time.Millisecond)
-		commandSend_(port, myic78civCommand, preamp)
+		commandSend(port, myic78civCommand, preamp)
 		time.Sleep(300 * time.Millisecond)
 	}
 
