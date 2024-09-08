@@ -1,9 +1,14 @@
 package ic78civCmd
 
-import "go.bug.st/serial"
+import (
+	"bytes"
+	"slices"
+
+	"go.bug.st/serial"
+)
 
 func requestTransiverAddr(port serial.Port) (byte, error) {
-	addr, er := commandSend(port, nil, taddr)
+	addr, er := commandSend_(port, nil, taddr)
 	if er != nil {
 		return 0x00, er
 	} else {
@@ -12,95 +17,56 @@ func requestTransiverAddr(port serial.Port) (byte, error) {
 
 }
 
-func requestMode(port serial.Port, p *civCommand) (string, error) {
-	buff, err := commandSend(port, p, mode)
-	var mode string
-	if err != nil {
-		return "error", err
+func commandSend(port serial.Port, p *civCommand, c commandName) ([]byte, error) {
+	readBuff := make([]byte, maxReadBuff)
+	dataBuff := make([]byte, 7)
+	var arg []byte
+	var cmd byte
+	switch c {
+	case freqRead:
+		arg = p.requestFreque
+		cmd = byte(readFreqCmd)
+	case taddr:
+		arg = []byte{byte(preambleCmd), byte(preambleCmd), 0x00, byte(controllerAddrCmd), byte(readAddrCmd), 0x00, byte(endMsgCmd)}
+		cmd = byte(readAddrCmd)
+	case mode:
+		arg = p.requestMode
+		cmd = byte(readModeCmd)
+	case att:
+		arg = p.requestATT
+		cmd = byte(attCmd)
+	case af:
+		arg = p.requestAFLevel
+		cmd = byte(afrfsqlCmd)
+	case rf:
+		arg = p.requestRFLevel
+		cmd = byte(afrfsqlCmd)
+	case sql:
+		arg = p.requestSQLLevel
+		cmd = byte(afrfsqlCmd)
+	case preamp:
+		arg = p.requestPreamp
+		cmd = byte(preampCmd)
 	}
-	switch buff[0] {
-	case 0x00:
-		mode = "LSB"
-	case 0x01:
-		mode = "USB"
-	case 0x02:
-		mode = "AM"
-	case 0x04:
-		mode = "RTTY"
-	case 0x07:
-		mode = "CW"
-	}
-	return mode, err
-}
 
-func requestPreamp(port serial.Port, p *civCommand) (string, error) {
-	buff, err := commandSend(port, p, preamp)
-	var preamp string
+	n, readBuff, err := sendDataToTransiver(port, arg)
 	if err != nil {
-		return "error", err
+		return readBuff, err
 	}
-	buff = append(make([]byte, 0), buff[1:]...)
-	switch buff[0] {
-	case 0x00:
-		preamp = "OFF"
-	case 0x01:
-		preamp = "P.AMP"
+	for i := 0; i < n; i++ {
+		idxCmd := slices.Index(readBuff, cmd)
+		idxEnd := slices.Index(readBuff, byte(endMsgCmd))
+		if idxCmd > idxEnd {
+			readBuff = readBuff[idxCmd+1 : len(readBuff)]
+		}
+		if idxEnd != -1 {
+			if bytes.Equal(readBuff[:idxEnd+1], arg[:len(arg)]) {
+				readBuff = readBuff[idxEnd+1 : len(readBuff)]
+			} else {
+				dataBuff = readBuff[idxCmd:idxEnd]
+				dataBuff = append(make([]byte, 0), dataBuff[1:]...)
+			}
+		}
 	}
-	return preamp, err
-}
-
-func requestATT(port serial.Port, p *civCommand) (string, error) {
-	buff, err := commandSend(port, p, att)
-	var att string
-	if err != nil {
-		return "error", err
-	}
-	switch buff[0] {
-	case 0x00:
-		att = "NO"
-	case 0x20:
-		att = "YES"
-	}
-	return att, err
-}
-
-func requestFreque(port serial.Port, p *civCommand) (uint32, error) {
-	buff, err := commandSend(port, p, freqRead)
-	if err != nil {
-		return 0, err
-	}
-	buffRevers := make([]byte, len(buff))
-	j := 0
-	for i := len(buff) - 1; i > -1; i-- {
-		buffRevers[j] = buff[i]
-		j++
-	}
-	return bcdToInt(buffRevers) / 1000, err
-}
-
-func requestAFLevel(port serial.Port, p *civCommand) (uint32, error) {
-	buff, err := commandSend(port, p, af)
-	if err != nil {
-		return 0, err
-	}
-	buff = append(make([]byte, 0), buff[1:]...)
-	return (bcdToInt(buff) * 100) / 254, err
-}
-
-func requestSQLLevel(port serial.Port, p *civCommand) (uint32, error) {
-	buff, err := commandSend(port, p, sql)
-	if err != nil {
-		return 0, err
-	}
-	buff = append(make([]byte, 0), buff[1:]...)
-	return (bcdToInt(buff) * 100) / 254, err
-}
-
-func requestRFLevel(port serial.Port, p *civCommand) (uint32, error) {
-	buff, err := commandSend(port, p, rf)
-	if err != nil {
-		return 0, err
-	}
-	buff = append(make([]byte, 0), buff[1:]...)
-	return (bcdToInt(buff) * 100) / 254, err
+	return dataBuff, nil
 }
