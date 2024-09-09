@@ -95,10 +95,14 @@ func InputMenu() {
 
 	g.Cursor = true
 
-	label := NewLabel("label", 1, 1, "Name")
+	label := NewLabel("label", 1, 1, "Freque")
 	input := NewInput("input", 7, 1, 20, 10)
+
+	label2 := NewLabel("label2", 30, 1, "Name")
+	//input := NewInput("input2", 7, 1, 20, 10)
+
 	focus := gocui.ManagerFunc(SetFocus("input"))
-	g.SetManager(label, input, focus)
+	g.SetManager(label, label2, input, focus)
 
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quitImput); err != nil {
 		log.Panicln(err)

@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	menu.InputMenu()
+	menu.InputMenuForm()
 	/*var port serial.Port
 	var serialAccess sync.Mutex
 	port = serialDataExchange.OpenSerialPort(19200, 8)
