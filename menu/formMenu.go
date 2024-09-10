@@ -73,35 +73,34 @@ func InputMenuForm() {
 	//g.SetManagerFunc(layoutF)
 
 	// new form
-	signup1 := &signupF{
+	signup := &signupF{
 		component.NewForm(g, " IC-78 Set ", 0, 8, 50, 12),
 	}
-	signup1.Draw()
+	signup.Draw()
 
 	signupFreq := &signupF{
-		component.NewForm(g, " Freque Set ", 1, 9, 10, 1),
+		component.NewForm(g, " Freque Set ", 1, 9, 10, 0),
 	}
-	//signup.AddInputField_(" ", 11, 9, 11, 18).
-	//		AddValidate("required input", requireValidatorF)
+	signup.AddInputField_(" ", 1, 9, 0, 9).
+		AddValidate("required input", requireValidatorF)
 	signupFreq.Draw()
 
 	signupMode := &signupF{
 		component.NewForm(g, " Mode ", 13, 9, 10, 1),
 	}
-	//signup2.AddInputField_(" ", 11, 9, 11, 18).
-	//	AddValidate("required input", requireValidatorF)
+	signupMode.AddSelect_(" ", 13, 9, 0, 5).AddOptions("LSB", "USB", "CW", "RTTY", "AM")
 	signupMode.Draw()
 
 	signupAtt := &signupF{
 		component.NewForm(g, " ATT ", 25, 9, 10, 1),
 	}
-	//signup2.AddInputField_(" ", 11, 9, 11, 18).
-	//	AddValidate("required input", requireValidatorF)
+	signupAtt.AddSelect(" ", 0, 5).AddOptions("ON", "OFF")
 	signupAtt.Draw()
 
 	signupPreamp := &signupF{
 		component.NewForm(g, " Preamp ", 37, 9, 10, 1),
 	}
+	signupPreamp.AddSelect(" ", 0, 5).AddOptions("P.AMP", "OFF")
 	//signup2.AddInputField_(" ", 11, 9, 11, 18).
 	//	AddValidate("required input", requireValidatorF)
 	signupPreamp.Draw()
