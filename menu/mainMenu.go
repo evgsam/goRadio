@@ -38,6 +38,33 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	for {
 		m := <-ch
 		g.Update(func(g *gocui.Gui) error {
+			/*	v, err := g.View("v9")
+				if err != nil {
+					return err
+				}
+				v.Clear()
+				v, err = g.View("v10")
+				if err != nil {
+					return err
+				}
+				v.Clear()
+				v, err = g.View("v11")
+				if err != nil {
+					return err
+				}
+				v.Clear()
+
+				v, err = g.View("v12")
+				if err != nil {
+					return err
+				}
+				v.Clear()
+				v, err = g.View("v13")
+				if err != nil {
+					return err
+				}
+				v.Clear()
+			*/
 			for key, value := range m {
 				switch key {
 				case byte(status):
@@ -122,8 +149,8 @@ func Menu(ch chan map[byte]string) {
 	}
 
 	g.SetManagerFunc(layout)
-	go dataToDisplay(g, ch)
 
+	go dataToDisplay(g, ch)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -196,11 +223,7 @@ func layout(g *gocui.Gui) error {
 		v.Title = " SQL "
 	}
 
-	/*component.NewSelect(g, "Mode:", 2, 9, 0, 5).
-		AddOptions("LSB", "USB", "AM", "RTTY", "CW").
-		Draw()
-
-	if v, err := g.SetView("v9", 0, 8, 50, 12); err != nil {
+	/*if v, err := g.SetView("v9", 0, 8, 50, 12); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
@@ -213,12 +236,26 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " freque set "
 	}
-	*/
-	/*if v, err := g.SetView("v3", 0, 4, 30, 7, 0); err != nil {
+
+	if v, err := g.SetView("v11", 17, 9, 27, 11); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
-		v.Title = "Transiver mode"
+		v.Title = " mode"
+	}
+
+	if v, err := g.SetView("v12", 28, 9, 38, 11); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " att"
+	}
+
+	if v, err := g.SetView("v13", 39, 9, 49, 11); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " preamp"
 	}
 	*/
 	return nil

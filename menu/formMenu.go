@@ -1,7 +1,9 @@
 package menu
 
 import (
+	"errors"
 	"fmt"
+	"log"
 
 	"github.com/jroimartin/gocui"
 
@@ -13,27 +15,98 @@ type signupF struct {
 	*component.Form
 }
 
+func layoutF(g *gocui.Gui) error {
+	/*if v, err := g.SetView("v9", 0, 8, 50, 12); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " IC-78 Set "
+	}
+	*/
+	if v, err := g.SetView("v10", 1, 9, 16, 11); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " freque set "
+	}
+
+	if v, err := g.SetView("v11", 17, 9, 27, 11); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " mode"
+	}
+
+	if v, err := g.SetView("v12", 28, 9, 38, 11); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " att"
+	}
+
+	if v, err := g.SetView("v13", 39, 9, 49, 11); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = " preamp"
+	}
+	/*
+		component.NewSelect(g, "mode_set", 17, 9, 0, 6).
+			AddOptions("LSB", "USB", "CW", "RTTY", "AM").
+			Draw()
+		component.NewSelect(g, "att_set", 28, 9, 0, 6).
+			AddOptions("ON", "OFF").
+			Draw()
+	*/
+	return nil
+}
+
 func InputMenuForm() {
-	gui, err := gocui.NewGui(gocui.Output256)
-
+	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
-		panic(err)
+		log.Panicln(err)
 	}
-	defer gui.Close()
-
-	if err := gui.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quitF); err != nil {
-		panic(err)
+	defer g.Close()
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quitF); err != nil {
+		log.Panicln(err)
 	}
+	//g.SetManagerFunc(layoutF)
 
 	// new form
-	signup := &signupF{
-		component.NewForm(gui, "Sign Up", 0, 0, 0, 0),
+	signup1 := &signupF{
+		component.NewForm(g, " IC-78 Set ", 0, 8, 50, 12),
 	}
+	signup1.Draw()
 
-	// add input field
-	signup.AddInputField("First Name", 11, 18).
-		AddValidate("required input", requireValidatorF)
-	signup.AddInputField("Last Name", 11, 18).
+	signupFreq := &signupF{
+		component.NewForm(g, " Freque Set ", 1, 9, 10, 1),
+	}
+	//signup.AddInputField_(" ", 11, 9, 11, 18).
+	//		AddValidate("required input", requireValidatorF)
+	signupFreq.Draw()
+
+	signupMode := &signupF{
+		component.NewForm(g, " Mode ", 13, 9, 10, 1),
+	}
+	//signup2.AddInputField_(" ", 11, 9, 11, 18).
+	//	AddValidate("required input", requireValidatorF)
+	signupMode.Draw()
+
+	signupAtt := &signupF{
+		component.NewForm(g, " ATT ", 25, 9, 10, 1),
+	}
+	//signup2.AddInputField_(" ", 11, 9, 11, 18).
+	//	AddValidate("required input", requireValidatorF)
+	signupAtt.Draw()
+
+	signupPreamp := &signupF{
+		component.NewForm(g, " Preamp ", 37, 9, 10, 1),
+	}
+	//signup2.AddInputField_(" ", 11, 9, 11, 18).
+	//	AddValidate("required input", requireValidatorF)
+	signupPreamp.Draw()
+
+	/*signup.AddInputField("Last Name", 11, 18).
 		AddValidate("required input", requireValidatorF)
 
 	signup.AddInputField("Password", 11, 18).
@@ -55,12 +128,13 @@ func InputMenuForm() {
 	// add button
 	signup.AddButton("Regist", signup.registF)
 	signup.AddButton("Cancel", quitF)
+	*/
 
-	signup.Draw()
-
-	if err := gui.MainLoop(); err != nil && err != gocui.ErrQuit {
-		panic(err)
+	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
+		log.Panicln(err)
 	}
+	//g.Close()
+
 }
 
 func (s *signupF) registF(g *gocui.Gui, v *gocui.View) error {
