@@ -15,6 +15,34 @@ type signupF struct {
 	ch chan map[byte]string
 }
 
+func updateMenu(g *gocui.Gui, signup *signupF) {
+	for {
+		g.Update(func(g *gocui.Gui) error {
+			signup.AddInputField_("Freque", 0, 9, 6, 10).
+				AddValidate("required input", requireValidatorF)
+				// add select
+			signup.AddSelect_("Mode", 18, 9, 4, 5).AddOptions("LSB", "USB", "CW", "RTTY", "AM")
+			signup.AddSelect_("ATT", 29, 9, 3, 4).AddOptions("ON", "OFF")
+			signup.AddSelect_("Preamp", 37, 9, 6, 6).AddOptions("P.AMP", "OFF")
+
+			signup.AddInputField_("AF", 7, 11, 4, 5).
+				AddValidate("required input", requireValidatorF)
+
+			signup.AddInputField_("RF", 17, 11, 4, 5).
+				AddValidate("required input", requireValidatorF)
+
+			signup.AddInputField_("SQL", 27, 11, 4, 5).
+				AddValidate("required input", requireValidatorF)
+			// add button
+			signup.AddButton("SEND Settins", signup.registF)
+			signup.AddButton("Cancel", quitF)
+
+			signup.Draw()
+			return nil
+		})
+	}
+}
+
 func InputMenuForm(ch chan map[byte]string) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -50,6 +78,7 @@ func InputMenuForm(ch chan map[byte]string) {
 	signup.AddButton("Cancel", quitF)
 
 	signup.Draw()
+
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -88,6 +117,7 @@ func (s *signupF) registF(g *gocui.Gui, v *gocui.View) error {
 		}
 	}
 	s.ch <- m
+	//updateMenu(g, s)
 	return nil
 }
 

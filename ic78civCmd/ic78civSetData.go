@@ -4,6 +4,7 @@ import (
 	"errors"
 	"slices"
 	"strconv"
+	"time"
 
 	"go.bug.st/serial"
 )
@@ -33,6 +34,7 @@ func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 				setAfRfSql(port, byte(transiverAddr), af, int(level))
 			}
 		}
+		time.Sleep(300 * time.Millisecond)
 	}
 
 }
