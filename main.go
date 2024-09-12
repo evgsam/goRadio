@@ -1,12 +1,20 @@
 package main
 
-import "goRadio/menu"
+import (
+	"goRadio/ic78civCmd"
+	"goRadio/menu"
+	"goRadio/serialDataExchange"
+)
 
 func main() {
-	menu.InputMenuForm()
-	/*var port serial.Port
-	var serialAccess sync.Mutex
-	port = serialDataExchange.OpenSerialPort(19200, 8)
+	port := serialDataExchange.OpenSerialPort(19200, 8)
+	ch := make(chan map[byte]string, 3)
+	//go ic78civCmd.IC78civCmdSet(port, ch)
+	go ic78civCmd.IC78civCmdSet(port, ch)
+	menu.InputMenuForm(ch)
+
+	/*var serialAccess sync.Mutex
+
 
 	go ic78civCmd.CivCmdParser(port, &serialAccess)
 
