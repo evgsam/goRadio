@@ -15,52 +15,6 @@ type signupF struct {
 	*component.Form
 }
 
-func layoutF(g *gocui.Gui) error {
-	/*if v, err := g.SetView("v9", 0, 8, 50, 12); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " IC-78 Set "
-	}
-	*/
-	if v, err := g.SetView("v10", 1, 9, 16, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " freque set "
-	}
-
-	if v, err := g.SetView("v11", 17, 9, 27, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " mode"
-	}
-
-	if v, err := g.SetView("v12", 28, 9, 38, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " att"
-	}
-
-	if v, err := g.SetView("v13", 39, 9, 49, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " preamp"
-	}
-	/*
-		component.NewSelect(g, "mode_set", 17, 9, 0, 6).
-			AddOptions("LSB", "USB", "CW", "RTTY", "AM").
-			Draw()
-		component.NewSelect(g, "att_set", 28, 9, 0, 6).
-			AddOptions("ON", "OFF").
-			Draw()
-	*/
-	return nil
-}
-
 func InputMenuForm() {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -70,65 +24,32 @@ func InputMenuForm() {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quitF); err != nil {
 		log.Panicln(err)
 	}
-	//g.SetManagerFunc(layoutF)
 
 	// new form
 	signup := &signupF{
-		component.NewForm(g, " IC-78 Set ", 0, 8, 50, 12),
+		component.NewForm(g, " IC-78 Set ", 0, 8, 20, 10),
 	}
-	signup.Draw()
-
-	signupFreq := &signupF{
-		component.NewForm(g, " Freque Set ", 1, 9, 10, 0),
-	}
-	signup.AddInputField_(" ", 1, 9, 0, 9).
+	signup.AddInputField_("Freque", 0, 9, 6, 10).
 		AddValidate("required input", requireValidatorF)
-	signupFreq.Draw()
-
-	signupMode := &signupF{
-		component.NewForm(g, " Mode ", 13, 9, 10, 1),
-	}
-	signupMode.AddSelect_(" ", 13, 9, 0, 5).AddOptions("LSB", "USB", "CW", "RTTY", "AM")
-	signupMode.Draw()
-
-	signupAtt := &signupF{
-		component.NewForm(g, " ATT ", 25, 9, 10, 1),
-	}
-	signupAtt.AddSelect(" ", 0, 5).AddOptions("ON", "OFF")
-	signupAtt.Draw()
-
-	signupPreamp := &signupF{
-		component.NewForm(g, " Preamp ", 37, 9, 10, 1),
-	}
-	signupPreamp.AddSelect(" ", 0, 5).AddOptions("P.AMP", "OFF")
-	//signup2.AddInputField_(" ", 11, 9, 11, 18).
-	//	AddValidate("required input", requireValidatorF)
-	signupPreamp.Draw()
-
-	/*signup.AddInputField("Last Name", 11, 18).
-		AddValidate("required input", requireValidatorF)
-
-	signup.AddInputField("Password", 11, 18).
-		AddValidate("required input", requireValidatorF).
-		SetMask().
-		SetMaskKeybinding(gocui.KeyCtrlA)
-
-		// add checkbox
-	signup.AddCheckBox("Age 18+", 11)
 
 	// add select
-	signup.AddSelect("Language", 11, 10).AddOptions("Japanese", "English", "Chinese")
+	signup.AddSelect_("Mode", 18, 9, 4, 5).AddOptions("LSB", "USB", "CW", "RTTY", "AM")
+	signup.AddSelect_("ATT", 29, 9, 3, 4).AddOptions("ON", "OFF")
+	signup.AddSelect_("Preamp", 37, 9, 6, 6).AddOptions("P.AMP", "OFF")
 
-	// add radios
-	signup.AddRadio("Country", 11).
-		SetMode(component.VerticalMode).
-		AddOptions("Japan", "America", "China")
+	signup.AddInputField_("AF", 7, 11, 4, 5).
+		AddValidate("required input", requireValidatorF)
 
+	signup.AddInputField_("RF", 17, 11, 4, 5).
+		AddValidate("required input", requireValidatorF)
+
+	signup.AddInputField_("SQL", 27, 11, 4, 5).
+		AddValidate("required input", requireValidatorF)
 	// add button
-	signup.AddButton("Regist", signup.registF)
+	signup.AddButton("SEND Settins", signup.registF)
 	signup.AddButton("Cancel", quitF)
-	*/
 
+	signup.Draw()
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -154,8 +75,6 @@ func (s *signupF) registF(g *gocui.Gui, v *gocui.View) error {
 	for label, opt := range s.GetSelectedOpts() {
 		text += fmt.Sprintf("%s: %s\n", label, opt)
 	}
-
-	text += fmt.Sprintf("radio: %s\n", s.GetSelectedRadios())
 
 	modal := component.NewModal(g, 0, 0, 30).SetText(text)
 	modal.AddButton("OK", gocui.KeyEnter, func(g *gocui.Gui, v *gocui.View) error {
