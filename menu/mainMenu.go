@@ -38,33 +38,6 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	for {
 		m := <-ch
 		g.Update(func(g *gocui.Gui) error {
-			/*	v, err := g.View("v9")
-				if err != nil {
-					return err
-				}
-				v.Clear()
-				v, err = g.View("v10")
-				if err != nil {
-					return err
-				}
-				v.Clear()
-				v, err = g.View("v11")
-				if err != nil {
-					return err
-				}
-				v.Clear()
-
-				v, err = g.View("v12")
-				if err != nil {
-					return err
-				}
-				v.Clear()
-				v, err = g.View("v13")
-				if err != nil {
-					return err
-				}
-				v.Clear()
-			*/
 			for key, value := range m {
 				switch key {
 				case byte(status):

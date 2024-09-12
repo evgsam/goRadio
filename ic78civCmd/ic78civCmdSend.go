@@ -47,7 +47,7 @@ func sendDataToTransiver(port serial.Port, arg []byte) (int, []byte, error) {
 	return n, readBuff, nil
 }
 
-func commandSend(port serial.Port, p *civCommand, c commandName) {
+func commandSend(port serial.Port, p *civCommand, c commandName, value string) {
 	var arg []byte
 	switch c {
 	case freqRead:

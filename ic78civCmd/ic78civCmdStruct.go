@@ -64,52 +64,6 @@ func getTransiverAddr() byte {
 	return myic78civCommand.transiverAddr
 }
 
-/*func DataPollingGorutine(port serial.Port, serialAcces *sync.Mutex) {
-	ch := make(chan *datastruct.RadioSettings, 10)
-	go menu.Menu(ch)
-	for {
-		serialAcces.Lock()
-		port.ResetInputBuffer()
-		adr, err := requestTransiverAddr(port)
-		if err != nil {
-			for err != nil {
-				ch <- &datastruct.RadioSettings{
-					Err:    err,
-					Status: "Error",
-				}
-				adr, err = requestTransiverAddr(port)
-				time.Sleep(50 * time.Millisecond)
-			}
-		}
-		myic78civCommand = newIc78civCommand(adr)
-		mode, _ := requestMode(port, myic78civCommand)
-		att, _ := requestATT(port, myic78civCommand)
-		preamp, _ := requestPreamp(port, myic78civCommand)
-		freq, _ := requestFreque(port, myic78civCommand)
-		af, _ := requestAFLevel(port, myic78civCommand)
-		rf, _ := requestRFLevel(port, myic78civCommand)
-		sql, _ := requestSQLLevel(port, myic78civCommand)
-
-		port.ResetInputBuffer()
-		serialAcces.Unlock()
-
-		ch <- &datastruct.RadioSettings{
-			Err:    err,
-			Status: "Connect",
-			Mode:   mode,
-			ATT:    att,
-			Preamp: preamp,
-			Freque: freq,
-			AF:     af,
-			RF:     rf,
-			SQL:    sql,
-			TrAddr: adr,
-		}
-		time.Sleep(1 * time.Second)
-	}
-}
-*/
-
 func addElementToFirstIndex(x []byte, y byte) []byte {
 	x = append([]byte{y}, x...)
 	return x
