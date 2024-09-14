@@ -2,6 +2,7 @@ package menu
 
 import (
 	"errors"
+	"fmt"
 	"log"
 
 	"github.com/jroimartin/gocui"
@@ -12,11 +13,13 @@ import (
 
 type signupF struct {
 	*component.Form
-	ch chan map[byte]string
+	//ch chan map[byte]string
+	// displayAcces *sync.Mutex
 }
 
 func updateMenu(g *gocui.Gui, signup *signupF) {
 	for {
+
 		g.Update(func(g *gocui.Gui) error {
 			signup.AddInputField_("Freque", 0, 9, 6, 10).
 				AddValidate("required input", requireValidatorF)

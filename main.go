@@ -1,12 +1,15 @@
 package main
 
 import (
-	"goRadio/menu"
+	"goRadio/ic78civCmd"
+	"goRadio/serialDataExchange"
+	"sync"
+	"time"
 )
 
 func main() {
-	menu.Exemple()
-	/*port := serialDataExchange.OpenSerialPort(19200, 8)
+	//menu.Exemple()
+	port := serialDataExchange.OpenSerialPort(19200, 8)
 	//ch := make(chan map[byte]string, 3)
 	//go ic78civCmd.IC78civCmdSet(port, ch)
 	//menu.InputMenuForm(ch)
@@ -18,5 +21,5 @@ func main() {
 	for {
 		time.Sleep(10 * time.Second)
 	}
-	*/
+
 }

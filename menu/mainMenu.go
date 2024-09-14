@@ -110,6 +110,19 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	}
 }
 
+func newView_(g *gocui.Gui) error {
+	_, err := g.SetView("set", 0, 0, 15, 15)
+	if err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+	}
+	if _, err := g.SetCurrentView("set"); err != nil {
+		return err
+	}
+	return nil
+}
+
 func Menu(ch chan map[byte]string) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -117,12 +130,11 @@ func Menu(ch chan map[byte]string) {
 	}
 	defer g.Close()
 
-	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
-		log.Panicln(err)
-	}
-
 	g.SetManagerFunc(layout)
 
+	if err := initKeybindings_(g); err != nil {
+		log.Panicln(err)
+	}
 	go dataToDisplay(g, ch)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
@@ -195,41 +207,15 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " SQL "
 	}
+	return nil
+}
 
-	/*if v, err := g.SetView("v9", 0, 8, 50, 12); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " IC-78 Set "
+func initKeybindings_(g *gocui.Gui) error {
+	if err := g.SetKeybinding("", 'n', gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return newView_(g)
+		}); err != nil {
+		return err
 	}
-
-	if v, err := g.SetView("v10", 1, 9, 16, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " freque set "
-	}
-
-	if v, err := g.SetView("v11", 17, 9, 27, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " mode"
-	}
-
-	if v, err := g.SetView("v12", 28, 9, 38, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " att"
-	}
-
-	if v, err := g.SetView("v13", 39, 9, 49, 11); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " preamp"
-	}
-	*/
 	return nil
 }
