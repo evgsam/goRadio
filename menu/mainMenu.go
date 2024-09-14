@@ -114,9 +114,19 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	}
 }
 
+func delNewView_(g *gocui.Gui) error {
+	if err := g.DeleteView("set"); err != nil {
+		return err
+	}
+	for _, s := range views_ {
+		g.SetViewOnTop(s)
+	}
+	return nil
+}
+
 func newView_(g *gocui.Gui) error {
 	for _, s := range views_ {
-		g.DeleteView(s)
+		g.SetViewOnBottom(s)
 	}
 	_, err := g.SetView("set", 0, 0, 15, 15)
 	if err != nil {
@@ -142,7 +152,7 @@ func Menu(ch chan map[byte]string) {
 	if err := initKeybindings_(g); err != nil {
 		log.Panicln(err)
 	}
-	//	go dataToDisplay(g, ch)
+	go dataToDisplay(g, ch)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -234,5 +244,12 @@ func initKeybindings_(g *gocui.Gui) error {
 		}); err != nil {
 		return err
 	}
+	if err := g.SetKeybinding("", 'b', gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return delNewView_(g)
+		}); err != nil {
+		return err
+	}
+
 	return nil
 }
