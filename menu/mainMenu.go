@@ -115,6 +115,9 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 }
 
 func newView_(g *gocui.Gui) error {
+	for _, s := range views_ {
+		g.DeleteView(s)
+	}
 	_, err := g.SetView("set", 0, 0, 15, 15)
 	if err != nil {
 		if err != gocui.ErrUnknownView {
@@ -139,7 +142,7 @@ func Menu(ch chan map[byte]string) {
 	if err := initKeybindings_(g); err != nil {
 		log.Panicln(err)
 	}
-	go dataToDisplay(g, ch)
+	//	go dataToDisplay(g, ch)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
