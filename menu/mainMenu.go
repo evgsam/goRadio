@@ -34,6 +34,10 @@ const (
 	status
 )
 
+var (
+	views_ = []string{}
+)
+
 func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	for {
 		m := <-ch
@@ -150,6 +154,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " IC-78 Information "
 	}
+	views_ = append(views_, "v0")
 
 	if v, err := g.SetView(Status, 1, 1, 16, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -158,6 +163,7 @@ func layout(g *gocui.Gui) error {
 		v.Title = " status "
 		fmt.Fprint(v, "Disconnected")
 	}
+	views_ = append(views_, Status)
 
 	if v, err := g.SetView(Mode, 17, 1, 27, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -165,6 +171,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " mode "
 	}
+	views_ = append(views_, Mode)
 
 	if v, err := g.SetView(ATT, 28, 1, 38, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -172,6 +179,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " ATT "
 	}
+	views_ = append(views_, ATT)
 
 	if v, err := g.SetView(Preamp, 39, 1, 49, 3); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -179,6 +187,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " preamp "
 	}
+	views_ = append(views_, Preamp)
 
 	if v, err := g.SetView(Freque, 1, 4, 16, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -186,6 +195,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " freque "
 	}
+	views_ = append(views_, Freque)
 
 	if v, err := g.SetView(AF, 17, 4, 27, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -193,6 +203,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " AF "
 	}
+	views_ = append(views_, AF)
 
 	if v, err := g.SetView(RF, 28, 4, 38, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -200,6 +211,7 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " RF "
 	}
+	views_ = append(views_, RF)
 
 	if v, err := g.SetView(SQL, 39, 4, 49, 6); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
@@ -207,6 +219,8 @@ func layout(g *gocui.Gui) error {
 		}
 		v.Title = " SQL "
 	}
+	views_ = append(views_, SQL)
+
 	return nil
 }
 
