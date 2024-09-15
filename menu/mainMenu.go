@@ -89,27 +89,22 @@ func delNewView_(g *gocui.Gui) error {
 	if err := g.DeleteView("set"); err != nil {
 		return err
 	}
-	for _, v := range viewsNames {
-		g.SetViewOnTop(v)
+	for _, v := range viewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
 	}
-
 	return nil
 }
 
 func newView_(g *gocui.Gui) error {
 	for _, v := range viewsNames {
-		g.SetViewOnBottom(v)
-	}
-	_, err := g.SetView("set", 0, 0, 15, 15)
-	if err != nil {
-		if err != gocui.ErrUnknownView {
+		if err := g.DeleteView(v); err != nil {
 			return err
 		}
 	}
+	_ = setView(g, "set", 0, 0, 50, 7)
 	if _, err := g.SetCurrentView("set"); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -141,7 +136,7 @@ func Menu(ch chan map[byte]string) {
 	if err := initKeybindings_(g); err != nil {
 		log.Panicln(err)
 	}
-	go dataToDisplay(g, ch)
+	//go dataToDisplay(g, ch)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
