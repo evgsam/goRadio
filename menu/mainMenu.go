@@ -32,11 +32,29 @@ const (
 	sql
 	preamp
 	status
+	mainViews
 )
 
 var (
-	views_ = []string{}
+	viewsNames = make(map[byte]string)
+	viewArray  = make([]viewsStruct, 0)
 )
+
+type viewsStruct struct {
+	cmd            commandName
+	name           string
+	x0, y0, x1, y1 int
+}
+
+func viewsValueUpdate(g *gocui.Gui, name, value string) error {
+	v, err := g.View(name)
+	if err != nil {
+		return err
+	}
+	v.Clear()
+	fmt.Fprintln(v, value)
+	return nil
+}
 
 func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	for {
@@ -45,68 +63,21 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 			for key, value := range m {
 				switch key {
 				case byte(status):
-					v, err := g.View(Status)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
-
+					_ = viewsValueUpdate(g, viewsNames[byte(status)], value)
 				case byte(mode):
-					v, err := g.View(Mode)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
-
+					_ = viewsValueUpdate(g, viewsNames[byte(mode)], value)
 				case byte(att):
-					v, err := g.View(ATT)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
-
+					_ = viewsValueUpdate(g, viewsNames[byte(att)], value)
 				case byte(preamp):
-					v, err := g.View(Preamp)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
-
+					_ = viewsValueUpdate(g, viewsNames[byte(preamp)], value)
 				case byte(freqRead):
-					v, err := g.View(Freque)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, m[byte(freqRead)])
-
+					_ = viewsValueUpdate(g, viewsNames[byte(freqRead)], value)
 				case byte(af):
-					v, err := g.View(AF)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
-
+					_ = viewsValueUpdate(g, viewsNames[byte(af)], value)
 				case byte(rf):
-					v, err := g.View(RF)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
-
+					_ = viewsValueUpdate(g, viewsNames[byte(rf)], value)
 				case byte(sql):
-					v, err := g.View(SQL)
-					if err != nil {
-						return err
-					}
-					v.Clear()
-					fmt.Fprintln(v, value)
+					_ = viewsValueUpdate(g, viewsNames[byte(sql)], value)
 				}
 			}
 			return nil
@@ -118,15 +89,16 @@ func delNewView_(g *gocui.Gui) error {
 	if err := g.DeleteView("set"); err != nil {
 		return err
 	}
-	for _, s := range views_ {
-		g.SetViewOnTop(s)
+	for _, v := range viewsNames {
+		g.SetViewOnTop(v)
 	}
+
 	return nil
 }
 
 func newView_(g *gocui.Gui) error {
-	for _, s := range views_ {
-		g.SetViewOnBottom(s)
+	for _, v := range viewsNames {
+		g.SetViewOnBottom(v)
 	}
 	_, err := g.SetView("set", 0, 0, 15, 15)
 	if err != nil {
@@ -137,10 +109,27 @@ func newView_(g *gocui.Gui) error {
 	if _, err := g.SetCurrentView("set"); err != nil {
 		return err
 	}
+
 	return nil
 }
 
 func Menu(ch chan map[byte]string) {
+	viewArray = []viewsStruct{
+		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 0, x1: 50, y1: 7},
+		{cmd: status, name: "status", x0: 1, y0: 1, x1: 16, y1: 3},
+		{cmd: mode, name: "mode", x0: 17, y0: 1, x1: 27, y1: 3},
+		{cmd: att, name: "ATT", x0: 28, y0: 1, x1: 38, y1: 3},
+		{cmd: preamp, name: "preamp", x0: 39, y0: 1, x1: 49, y1: 3},
+		{cmd: freqRead, name: "freque", x0: 1, y0: 4, x1: 16, y1: 6},
+		{cmd: af, name: "AF", x0: 17, y0: 4, x1: 27, y1: 6},
+		{cmd: rf, name: "RF", x0: 28, y0: 4, x1: 38, y1: 6},
+		{cmd: sql, name: "SQL", x0: 39, y0: 4, x1: 49, y1: 6},
+	}
+
+	for _, v := range viewArray {
+		viewsNames[byte(v.cmd)] = v.name
+	}
+
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -160,80 +149,20 @@ func Menu(ch chan map[byte]string) {
 
 }
 
+func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int) error {
+	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
+		if !errors.Is(err, gocui.ErrUnknownView) {
+			return err
+		}
+		v.Title = name
+	}
+	return nil
+}
+
 func layout(g *gocui.Gui) error {
-	if v, err := g.SetView("v0", 0, 0, 50, 7); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " IC-78 Information "
+	for _, v := range viewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
 	}
-	views_ = append(views_, "v0")
-
-	if v, err := g.SetView(Status, 1, 1, 16, 3); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " status "
-		fmt.Fprint(v, "Disconnected")
-	}
-	views_ = append(views_, Status)
-
-	if v, err := g.SetView(Mode, 17, 1, 27, 3); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " mode "
-	}
-	views_ = append(views_, Mode)
-
-	if v, err := g.SetView(ATT, 28, 1, 38, 3); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " ATT "
-	}
-	views_ = append(views_, ATT)
-
-	if v, err := g.SetView(Preamp, 39, 1, 49, 3); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " preamp "
-	}
-	views_ = append(views_, Preamp)
-
-	if v, err := g.SetView(Freque, 1, 4, 16, 6); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " freque "
-	}
-	views_ = append(views_, Freque)
-
-	if v, err := g.SetView(AF, 17, 4, 27, 6); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " AF "
-	}
-	views_ = append(views_, AF)
-
-	if v, err := g.SetView(RF, 28, 4, 38, 6); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " RF "
-	}
-	views_ = append(views_, RF)
-
-	if v, err := g.SetView(SQL, 39, 4, 49, 6); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = " SQL "
-	}
-	views_ = append(views_, SQL)
-
 	return nil
 }
 
