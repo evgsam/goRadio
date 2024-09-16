@@ -125,7 +125,9 @@ func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 func newView_(gui *gocui.Gui, guiCh chan *gocui.Gui) error {
 	if !newGui {
 		mainGui.Close()
-		setGui, err = gocui.NewGui(gocui.OutputNormal)
+		dataUpdateFlag = false
+		InputMenu()
+		/*setGui, err = gocui.NewGui(gocui.OutputNormal)
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -141,6 +143,7 @@ func newView_(gui *gocui.Gui, guiCh chan *gocui.Gui) error {
 		if err := setGui.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 			log.Panicln(err)
 		}
+		*/
 	}
 
 	return nil
