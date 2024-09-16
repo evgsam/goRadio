@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sync"
 
 	"github.com/jroimartin/gocui"
 	//"github.com/awesome-gocui/gocui"
@@ -36,8 +37,9 @@ const (
 )
 
 var (
-	viewsNames = make(map[byte]string)
-	viewArray  = make([]viewsStruct, 0)
+	displayAccessMutex sync.Mutex
+	viewsNames         = make(map[byte]string)
+	viewArray          = make([]viewsStruct, 0)
 )
 
 type viewsStruct struct {
@@ -59,6 +61,7 @@ func viewsValueUpdate(g *gocui.Gui, name, value string) error {
 func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	for {
 		m := <-ch
+		displayAccessMutex.Lock()
 		g.Update(func(g *gocui.Gui) error {
 			for key, value := range m {
 				switch key {
@@ -82,6 +85,7 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 			}
 			return nil
 		})
+		displayAccessMutex.Unlock()
 	}
 }
 
@@ -95,16 +99,26 @@ func delNewView_(g *gocui.Gui) error {
 	return nil
 }
 
-func newView_(g *gocui.Gui) error {
-	for _, v := range viewsNames {
-		if err := g.DeleteView(v); err != nil {
-			return err
-		}
+func newView_(gui *gocui.Gui) error {
+	displayAccessMutex.Lock()
+	gui.Close()
+
+	g, err := gocui.NewGui(gocui.OutputNormal)
+	if err != nil {
+		log.Panicln(err)
 	}
-	_ = setView(g, "set", 0, 0, 50, 7)
-	if _, err := g.SetCurrentView("set"); err != nil {
-		return err
+	defer g.Close()
+
+	g.SetManagerFunc(layoutNewMenu)
+
+	if err := initKeybindings_(g); err != nil {
+		log.Panicln(err)
 	}
+
+	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
+		log.Panicln(err)
+	}
+	displayAccessMutex.Unlock()
 	return nil
 }
 
@@ -131,12 +145,12 @@ func Menu(ch chan map[byte]string) {
 	}
 	defer g.Close()
 
-	g.SetManagerFunc(layout)
+	g.SetManagerFunc(layoutMainMenu)
 
 	if err := initKeybindings_(g); err != nil {
 		log.Panicln(err)
 	}
-	//go dataToDisplay(g, ch)
+	go dataToDisplay(g, ch)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -154,10 +168,17 @@ func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int) error {
 	return nil
 }
 
-func layout(g *gocui.Gui) error {
+func layoutMainMenu(g *gocui.Gui) error {
 	for _, v := range viewArray {
 		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
 	}
+	return nil
+}
+
+func layoutNewMenu(g *gocui.Gui) error {
+	//for _, v := range viewArray {
+	_ = setView(g, "set", 0, 0, 50, 7)
+	//}
 	return nil
 }
 
