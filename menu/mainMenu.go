@@ -37,12 +37,13 @@ const (
 
 var (
 	//displayAccessMutex sync.Mutex
-	viewsNames = make(map[byte]string)
-	viewArray  = make([]viewsStruct, 0)
-	mainGui    *gocui.Gui
-	setGui     *gocui.Gui
-	err        error
-	newGui     bool
+	viewsNames     = make(map[byte]string)
+	viewArray      = make([]viewsStruct, 0)
+	mainGui        *gocui.Gui
+	setGui         *gocui.Gui
+	err            error
+	newGui         bool
+	dataUpdateFlag bool
 )
 
 type viewsStruct struct {
@@ -61,8 +62,14 @@ func viewsValueUpdate(g *gocui.Gui, name, value string) error {
 	return nil
 }
 
-func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
+func dataToDisplay(ch chan map[byte]string, guiCh chan *gocui.Gui) {
+	var g *gocui.Gui
 	for {
+		if !dataUpdateFlag {
+			g = <-guiCh
+			dataUpdateFlag = true
+		}
+
 		m := <-ch
 		g.Update(func(g *gocui.Gui) error {
 			for key, value := range m {
@@ -90,7 +97,7 @@ func dataToDisplay(g *gocui.Gui, ch chan map[byte]string) {
 	}
 }
 
-func delNewView_(g *gocui.Gui) error {
+func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	newGui = false
 	setGui.Close()
 
@@ -102,16 +109,20 @@ func delNewView_(g *gocui.Gui) error {
 
 	mainGui.SetManagerFunc(layoutMainMenu)
 
-	if err := initKeybindings_(mainGui); err != nil {
+	if err := initKeybindings_(mainGui, guiCh); err != nil {
 		log.Panicln(err)
 	}
+
+	dataUpdateFlag = false
+	guiCh <- mainGui
+
 	if err := mainGui.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
 	return nil
 }
 
-func newView_(gui *gocui.Gui) error {
+func newView_(gui *gocui.Gui, guiCh chan *gocui.Gui) error {
 	if !newGui {
 		mainGui.Close()
 		setGui, err = gocui.NewGui(gocui.OutputNormal)
@@ -122,7 +133,7 @@ func newView_(gui *gocui.Gui) error {
 
 		setGui.SetManagerFunc(layoutNewMenu)
 
-		if err := initKeybindings_(setGui); err != nil {
+		if err := initKeybindings_(setGui, guiCh); err != nil {
 			log.Panicln(err)
 		}
 
@@ -136,6 +147,7 @@ func newView_(gui *gocui.Gui) error {
 }
 
 func Menu(ch chan map[byte]string) {
+	guiCn := make(chan *gocui.Gui)
 	viewArray = []viewsStruct{
 		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 0, x1: 50, y1: 7},
 		{cmd: status, name: "status", x0: 1, y0: 1, x1: 16, y1: 3},
@@ -158,10 +170,11 @@ func Menu(ch chan map[byte]string) {
 
 	mainGui.SetManagerFunc(layoutMainMenu)
 
-	if err := initKeybindings_(mainGui); err != nil {
+	if err := initKeybindings_(mainGui, guiCn); err != nil {
 		log.Panicln(err)
 	}
-	go dataToDisplay(mainGui, ch)
+	go dataToDisplay(ch, guiCn)
+	guiCn <- mainGui
 	if err := mainGui.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -190,16 +203,16 @@ func layoutNewMenu(g *gocui.Gui) error {
 	return nil
 }
 
-func initKeybindings_(g *gocui.Gui) error {
+func initKeybindings_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	if err := g.SetKeybinding("", 'n', gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return newView_(g)
+			return newView_(g, guiCh)
 		}); err != nil {
 		return err
 	}
 	if err := g.SetKeybinding("", 'b', gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return delNewView_(g)
+			return delNewView_(g, guiCh)
 		}); err != nil {
 		return err
 	}
