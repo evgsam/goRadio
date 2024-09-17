@@ -59,42 +59,42 @@ func viewsValueUpdate(g *gocui.Gui, name, value string) error {
 	return nil
 }
 
-func dataToDisplay(ch chan map[byte]string, guiCh chan *gocui.Gui) {
-	var g *gocui.Gui
+func dataToDisplay(g *gocui.Gui, ch chan map[byte]string, quitCh chan bool) {
 	for {
-		if !dataUpdateFlag {
-			g = <-guiCh
-			dataUpdateFlag = true
+		select {
+		case <-quitCh:
+			return
+		default:
+			m := <-ch
+			g.Update(func(g *gocui.Gui) error {
+				for key, value := range m {
+					switch key {
+					case byte(status):
+						_ = viewsValueUpdate(g, viewsNames[byte(status)], value)
+					case byte(mode):
+						_ = viewsValueUpdate(g, viewsNames[byte(mode)], value)
+					case byte(att):
+						_ = viewsValueUpdate(g, viewsNames[byte(att)], value)
+					case byte(preamp):
+						_ = viewsValueUpdate(g, viewsNames[byte(preamp)], value)
+					case byte(freqRead):
+						_ = viewsValueUpdate(g, viewsNames[byte(freqRead)], value)
+					case byte(af):
+						_ = viewsValueUpdate(g, viewsNames[byte(af)], value)
+					case byte(rf):
+						_ = viewsValueUpdate(g, viewsNames[byte(rf)], value)
+					case byte(sql):
+						_ = viewsValueUpdate(g, viewsNames[byte(sql)], value)
+					}
+				}
+				return nil
+			})
 		}
 
-		m := <-ch
-		g.Update(func(g *gocui.Gui) error {
-			for key, value := range m {
-				switch key {
-				case byte(status):
-					_ = viewsValueUpdate(g, viewsNames[byte(status)], value)
-				case byte(mode):
-					_ = viewsValueUpdate(g, viewsNames[byte(mode)], value)
-				case byte(att):
-					_ = viewsValueUpdate(g, viewsNames[byte(att)], value)
-				case byte(preamp):
-					_ = viewsValueUpdate(g, viewsNames[byte(preamp)], value)
-				case byte(freqRead):
-					_ = viewsValueUpdate(g, viewsNames[byte(freqRead)], value)
-				case byte(af):
-					_ = viewsValueUpdate(g, viewsNames[byte(af)], value)
-				case byte(rf):
-					_ = viewsValueUpdate(g, viewsNames[byte(rf)], value)
-				case byte(sql):
-					_ = viewsValueUpdate(g, viewsNames[byte(sql)], value)
-				}
-			}
-			return nil
-		})
 	}
 }
 
-func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
+func delNewView_(g *gocui.Gui, ch chan map[byte]string, quitCh chan bool) error {
 	newGui = false
 	g.Close()
 
@@ -106,12 +106,10 @@ func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 
 	g.SetManagerFunc(layoutMainMenu)
 
-	if err := initKeybindings_(g, guiCh); err != nil {
+	if err := initKeybindings_(g, ch, quitCh); err != nil {
 		log.Panicln(err)
 	}
-
-	dataUpdateFlag = false
-	guiCh <- g
+	go dataToDisplay(g, ch, quitCh)
 
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
@@ -119,9 +117,10 @@ func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	return nil
 }
 
-func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
+func newView_(g *gocui.Gui, ch chan map[byte]string, quitCh chan bool) error {
 	if !newGui {
 		g.Close()
+		quitCh <- true
 		//dataUpdateFlag = false
 		//inputMenu()
 		g, err = gocui.NewGui(gocui.OutputNormal)
@@ -132,7 +131,7 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 
 		g.SetManagerFunc(layoutNewMenu)
 
-		if err := initKeybindings_(g, guiCh); err != nil {
+		if err := initKeybindings_(g, ch, quitCh); err != nil {
 			log.Panicln(err)
 		}
 
@@ -147,7 +146,7 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 }
 
 func Menu(ch chan map[byte]string) {
-	guiCn := make(chan *gocui.Gui)
+	quitCh := make(chan bool)
 	viewArray = []viewsStruct{
 		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 0, x1: 50, y1: 7},
 		{cmd: status, name: "status", x0: 1, y0: 1, x1: 16, y1: 3},
@@ -170,11 +169,10 @@ func Menu(ch chan map[byte]string) {
 
 	g.SetManagerFunc(layoutMainMenu)
 
-	if err := initKeybindings_(g, guiCn); err != nil {
+	if err := initKeybindings_(g, ch, quitCh); err != nil {
 		log.Panicln(err)
 	}
-	go dataToDisplay(ch, guiCn)
-	guiCn <- g
+	go dataToDisplay(g, ch, quitCh)
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
 	}
@@ -203,16 +201,16 @@ func layoutNewMenu(g *gocui.Gui) error {
 	return nil
 }
 
-func initKeybindings_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
+func initKeybindings_(g *gocui.Gui, ch chan map[byte]string, quitCh chan bool) error {
 	if err := g.SetKeybinding("", 'n', gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return newView_(g, guiCh)
+			return newView_(g, ch, quitCh)
 		}); err != nil {
 		return err
 	}
 	if err := g.SetKeybinding("", 'b', gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return delNewView_(g, guiCh)
+			return delNewView_(g, ch, quitCh)
 		}); err != nil {
 		return err
 	}
