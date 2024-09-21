@@ -122,31 +122,33 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	if !newGui {
 		newGui = true
 		dataUpdateFlag = false
-		g.Close()
-		g, err := gocui.NewGui(gocui.OutputNormal)
+		for _, v := range viewArray {
+			_ = delView_(g, v.name)
+		}
+
+		//inputMenu(g, guiCh)
+		//widgets()
+		g, err = gocui.NewGui(gocui.OutputNormal)
 		if err != nil {
 			log.Panicln(err)
 		}
 		defer g.Close()
-		inputMenu(g, guiCh)
-		//widgets()
-		/*	g, err = gocui.NewGui(gocui.OutputNormal)
-			if err != nil {
-				log.Panicln(err)
-			}
-			defer g.Close()
 
-			g.SetManagerFunc(layoutNewMenu)
+		g.SetManagerFunc(layoutNewMenu)
+		if err := initKeybindings_(g, guiCh); err != nil {
+			log.Panicln(err)
+		}
 
-			if err := initKeybindings_(g, guiCh); err != nil {
-				log.Panicln(err)
-			}
+		newGui = true
+		if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
+			log.Panicln(err)
+		}
 
-			newGui = true
-			if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
-				log.Panicln(err)
-			}
+		/*	g.Update(func(g *gocui.Gui) error {
+				return nil
+			})
 		*/
+
 	}
 
 	return nil
@@ -193,6 +195,15 @@ func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int) error {
 			return err
 		}
 		v.Title = name
+	}
+	return nil
+}
+
+func delView_(g *gocui.Gui, name string) error {
+	if err := g.DeleteView(name); err != nil {
+		if err != gocui.ErrUnknownView {
+			panic(err)
+		}
 	}
 	return nil
 }

@@ -93,14 +93,25 @@ func inputMenu(g *gocui.Gui, guiCh chan *gocui.Gui) {
 	labelMode := NewLabel("mode", 1, 4, "mode")
 	inputFreque := NewInput("inputFreque", 7, 1, 20, 10)
 	focus := gocui.ManagerFunc(SetFocus("inputFreque"))
-	g.SetManager(labelFreque, labelMode, inputFreque, focus)
+
+	status := NewStatusbarWidget("status", 1, 7, 50)
+	butAM := NewButtonWidget("am", 52, 7, "AM", statusDown(status))
+	butLSB := NewButtonWidget("lsb", 58, 7, "LSB", statusUp(status))
+
+	//g.SetManager(labelFreque, labelMode, inputFreque, focus, status, butAM, butLSB)
 
 	if err := initKeybindings_(g, guiCh); err != nil {
 		log.Panicln(err)
 	}
 
-	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
-		log.Panicln(err)
-	}
+	g.Update(func(g *gocui.Gui) error {
+		g.SetManager(labelFreque, labelMode, inputFreque, focus, status, butAM, butLSB)
+		return nil
+	})
 
+	/*
+		if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+			log.Panicln(err)
+		}
+	*/
 }
