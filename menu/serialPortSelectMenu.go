@@ -36,6 +36,7 @@ func SerialPortSelectMenu(ch chan []string) {
 	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
 		panic(err)
 	}
+
 }
 
 func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
@@ -47,10 +48,10 @@ func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
 	for _, val := range s.GetSelectedRadios() {
 		text = val
 	}
-	s.ch <- []string{text}
 	s.Close(g, v)
 	//s.quit(g, v)
 	quit(g, v)
+	s.ch <- []string{text}
 	return nil
 }
 

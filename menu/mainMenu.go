@@ -126,9 +126,9 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 			_ = delView_(g, v.name)
 		}
 
-		//inputMenu(g, guiCh)
+		inputMenuForm()
 		//widgets()
-		g, err = gocui.NewGui(gocui.OutputNormal)
+		/*g, err = gocui.NewGui(gocui.OutputNormal)
 		if err != nil {
 			log.Panicln(err)
 		}
@@ -143,7 +143,7 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 		if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 			log.Panicln(err)
 		}
-
+		*/
 		/*	g.Update(func(g *gocui.Gui) error {
 				return nil
 			})
