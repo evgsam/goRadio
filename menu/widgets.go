@@ -140,11 +140,6 @@ func widgets() {
 	}
 }
 
-/*func quit(g *gocui.Gui, v *gocui.View) error {
-	return gocui.ErrQuit
-}
-*/
-
 func toggleButton(g *gocui.Gui, v *gocui.View) error {
 	nextview := "butdown"
 	if v != nil && v.Name() == "butdown" {
