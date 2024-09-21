@@ -125,8 +125,9 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 		for _, v := range viewArray {
 			_ = delView_(g, v.name)
 		}
-
-		inputMenuForm()
+		g.Close()
+		newGui = true
+		inputMenuForm(guiCh)
 		//widgets()
 		/*g, err = gocui.NewGui(gocui.OutputNormal)
 		if err != nil {
@@ -139,7 +140,7 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 			log.Panicln(err)
 		}
 
-		newGui = true
+
 		if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 			log.Panicln(err)
 		}
@@ -232,6 +233,9 @@ func initKeybindings_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 			return delNewView_(g, guiCh)
 		}); err != nil {
 		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+		log.Panicln(err)
 	}
 
 	return nil
