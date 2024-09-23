@@ -3,7 +3,6 @@ package ic78civCmd
 import (
 	"fmt"
 	datastruct "goRadio/dataStruct"
-	"goRadio/menu"
 	"goRadio/serialDataExchange"
 	"sync"
 	"time"
@@ -160,12 +159,10 @@ func parser(buffer []byte, ch chan map[byte]string) {
 	}
 }
 
-func CivCmdParser(port serial.Port, serialAcces *sync.Mutex) {
+func CivCmdParser(port serial.Port, serialAcces *sync.Mutex, chRadioSettings chan map[byte]string) {
 	adr_data = 0x62
 	myic78civCommand = newIc78civCommand(adr_data)
 	go dataRequest(port, myic78civCommand)
-	chRadioSettings := make(chan map[byte]string, 30)
-	go menu.Menu(chRadioSettings)
 	chSerialData := serialDataExchange.SerialPortPoller(port, serialAcces)
 	for msg := range chSerialData {
 		parser(splitByFD(adr_data, msg), chRadioSettings)

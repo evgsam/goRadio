@@ -3,7 +3,10 @@ package menu
 import (
 	"errors"
 	"fmt"
+	"goRadio/ic78civCmd"
+	"goRadio/serialDataExchange"
 	"log"
+	"sync"
 
 	"github.com/jroimartin/gocui"
 	//"github.com/awesome-gocui/gocui"
@@ -42,6 +45,7 @@ var (
 	err             error
 	newGui          bool
 	dataUpdateFlag  bool
+	portSelectFlag  bool
 )
 
 type viewsStruct struct {
@@ -157,8 +161,7 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	return nil
 }
 
-func Menu(ch chan map[byte]string) {
-	guiCn := make(chan *gocui.Gui)
+func viewArrayFilling() {
 	hotkeyViewArray = []viewsStruct{
 		{name: "Hotkey for change settings", x0: 0, y0: 0, x1: 50, y1: 7},
 		{name: "F1", x0: 1, y0: 1, x1: 8, y1: 3, value: "help"},
@@ -189,18 +192,29 @@ func Menu(ch chan map[byte]string) {
 	for _, v := range infoViewArray {
 		viewsNames[byte(v.cmd)] = v.name
 	}
+}
+
+func Menu(serialAcces *sync.Mutex) {
+	chRadioSettings := make(chan map[byte]string, 30)
+	guiCn := make(chan *gocui.Gui)
+	viewArrayFilling()
+
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer g.Close()
 
+	port := serialDataExchange.OpenSerialPort(19200, 8)
+
+	go ic78civCmd.CivCmdParser(port, serialAcces, chRadioSettings)
+
 	g.SetManagerFunc(layoutSetView)
 
 	if err := initKeybindings_(g, guiCn); err != nil {
 		log.Panicln(err)
 	}
-	go dataToDisplay(ch, guiCn)
+	go dataToDisplay(chRadioSettings, guiCn)
 	guiCn <- g
 	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
 		log.Panicln(err)
