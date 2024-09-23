@@ -158,15 +158,30 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 func Menu(ch chan map[byte]string) {
 	guiCn := make(chan *gocui.Gui)
 	viewArray = []viewsStruct{
-		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 0, x1: 50, y1: 7},
-		{cmd: status, name: "status", x0: 1, y0: 1, x1: 16, y1: 3},
-		{cmd: mode, name: "mode", x0: 17, y0: 1, x1: 27, y1: 3},
-		{cmd: att, name: "ATT", x0: 28, y0: 1, x1: 38, y1: 3},
-		{cmd: preamp, name: "preamp", x0: 39, y0: 1, x1: 49, y1: 3},
-		{cmd: freqRead, name: "freque", x0: 1, y0: 4, x1: 16, y1: 6},
-		{cmd: af, name: "AF", x0: 17, y0: 4, x1: 27, y1: 6},
-		{cmd: rf, name: "RF", x0: 28, y0: 4, x1: 38, y1: 6},
-		{cmd: sql, name: "SQL", x0: 39, y0: 4, x1: 49, y1: 6},
+		{name: "Hotkey", x0: 0, y0: 0, x1: 50, y1: 7},
+		{name: "F1", x0: 1, y0: 1, x1: 8, y1: 3},
+		{name: "F2", x0: 9, y0: 1, x1: 16, y1: 3},
+		{name: "F3", x0: 17, y0: 1, x1: 24, y1: 3},
+		{name: "F4", x0: 25, y0: 1, x1: 32, y1: 3},
+		{name: "F5", x0: 33, y0: 1, x1: 40, y1: 3},
+		{name: "F6", x0: 41, y0: 1, x1: 48, y1: 3},
+
+		{name: "F7", x0: 1, y0: 4, x1: 8, y1: 6},
+		{name: "F8", x0: 9, y0: 4, x1: 16, y1: 6},
+		{name: "F9", x0: 17, y0: 4, x1: 24, y1: 6},
+		{name: "F10", x0: 25, y0: 4, x1: 32, y1: 6},
+		{name: "F11", x0: 33, y0: 4, x1: 40, y1: 6},
+		{name: "F12", x0: 41, y0: 4, x1: 48, y1: 6},
+
+		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 8, x1: 50, y1: 15},
+		{cmd: status, name: "status", x0: 1, y0: 9, x1: 16, y1: 11},
+		{cmd: mode, name: "mode", x0: 17, y0: 9, x1: 27, y1: 11},
+		{cmd: att, name: "ATT", x0: 28, y0: 9, x1: 38, y1: 11},
+		{cmd: preamp, name: "preamp", x0: 39, y0: 9, x1: 49, y1: 11},
+		{cmd: freqRead, name: "freque", x0: 1, y0: 12, x1: 16, y1: 14},
+		{cmd: af, name: "AF", x0: 17, y0: 12, x1: 27, y1: 14},
+		{cmd: rf, name: "RF", x0: 28, y0: 12, x1: 38, y1: 14},
+		{cmd: sql, name: "SQL", x0: 39, y0: 12, x1: 49, y1: 14},
 	}
 	for _, v := range viewArray {
 		viewsNames[byte(v.cmd)] = v.name
@@ -210,6 +225,13 @@ func delView_(g *gocui.Gui, name string) error {
 }
 
 func layoutMainMenu(g *gocui.Gui) error {
+	for _, v := range viewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
+	}
+	return nil
+}
+
+func layoutChangeSettings(g *gocui.Gui) error {
 	for _, v := range viewArray {
 		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
 	}
