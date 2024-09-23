@@ -1,34 +1,33 @@
 package serialDataExchange
 
 import (
-	"fmt"
 	"log"
 
 	"go.bug.st/serial"
 )
 
-func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
-	//	serialListCh := make(chan []string)
-	//	go menu.SerialPortSelectMenu(serialListCh)
+func GetSerialPortList() []string {
 	ports, err := serial.GetPortsList()
-	var portsnum int
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(ports) == 0 {
 		log.Fatal("No serial ports found!")
 	}
-	/*	serialListCh <- ports
-		myPort := <-serialListCh
-		close(serialListCh)
-		for i, val := range ports {
-			if val == myPort[0] {
-				portsnum = i
-				break
-			}
+	return ports
+}
+
+func OpenSerialPort(BaudRate int, DataBits uint8, serialListCh chan []string, ports []string) serial.Port {
+	var portsnum int
+	myPort := <-serialListCh
+	//	close(serialListCh)
+	for i, val := range ports {
+		if val == myPort[0] {
+			portsnum = i
+			break
 		}
-	*/
-	fmt.Print("Ports list: \n")
+	}
+	/*fmt.Print("Ports list: \n")
 	for _, port := range ports {
 		fmt.Printf("Port #%d: %v\n", portsnum, port)
 		portsnum++
@@ -39,7 +38,7 @@ func OpenSerialPort(BaudRate int, DataBits uint8) serial.Port {
 	} else {
 		portsnum = 0
 	}
-
+	*/
 	mode := &serial.Mode{
 		BaudRate: BaudRate,
 		Parity:   serial.NoParity,

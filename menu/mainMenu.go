@@ -197,6 +197,8 @@ func viewArrayFilling() {
 func Menu(serialAcces *sync.Mutex) {
 	chRadioSettings := make(chan map[byte]string, 30)
 	guiCn := make(chan *gocui.Gui)
+	serialListCh := make(chan []string)
+
 	viewArrayFilling()
 
 	g, err := gocui.NewGui(gocui.OutputNormal)
@@ -205,7 +207,9 @@ func Menu(serialAcces *sync.Mutex) {
 	}
 	defer g.Close()
 
-	port := serialDataExchange.OpenSerialPort(19200, 8)
+	ports := serialDataExchange.GetSerialPortList()
+	go serialPortSelectMenu(g, ports, serialListCh)
+	port := serialDataExchange.OpenSerialPort(19200, 8, serialListCh, ports)
 
 	go ic78civCmd.CivCmdParser(port, serialAcces, chRadioSettings)
 

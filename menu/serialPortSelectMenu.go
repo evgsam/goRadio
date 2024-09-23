@@ -11,13 +11,7 @@ type signup struct {
 	ch chan []string
 }
 
-func SerialPortSelectMenu(ch chan []string) {
-	portList := <-ch
-	g, err := gocui.NewGui(gocui.OutputNormal)
-	if err != nil {
-		panic(err)
-	}
-	defer g.Close()
+func serialPortSelectMenu(g *gocui.Gui, ports []string, ch chan []string) {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		panic(err)
 	}
@@ -26,7 +20,7 @@ func SerialPortSelectMenu(ch chan []string) {
 	}
 	signup.AddRadio(" ", 0).
 		SetMode(component.VerticalMode).
-		AddOptions(portList...)
+		AddOptions(ports...)
 
 	// add button
 	signup.AddButton("Ok", signup.regist)
@@ -49,7 +43,6 @@ func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
 		text = val
 	}
 	s.Close(g, v)
-	//s.quit(g, v)
 	quit(g, v)
 	s.ch <- []string{text}
 	return nil
