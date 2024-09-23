@@ -1,19 +1,12 @@
 package menu
 
 import (
-	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 
 	"github.com/jroimartin/gocui"
 )
-
-const helpText = `KEYBINDINGS
-Tab: Move between buttons
-Enter: Push button
-^C: Exit`
 
 type Label struct {
 	name string
@@ -22,57 +15,7 @@ type Label struct {
 	body string
 }
 
-var (
-	text_     string
-	portsList = make([]string, 10)
-)
-
-type PortWidget struct {
-	name string
-	x, y int
-	w, h int
-	body string
-}
-
-func NewPortInfoWidget(name string, x, y int, body string) *PortWidget {
-	lines := strings.Split(body, "\n")
-
-	w := 0
-	for _, l := range lines {
-		if len(l) > w {
-			w = len(l)
-		}
-	}
-	h := len(lines) + 1
-	w = w + 1
-
-	return &PortWidget{name: name, x: x, y: y, w: w, h: h, body: body}
-}
-
-func (w *PortWidget) Layout(g *gocui.Gui) error {
-	maxLen := 0
-
-	for _, s := range portsList {
-		if len(s) > maxLen {
-			maxLen = len(s)
-		}
-	}
-
-	//maxX, maxY := g.Size()
-	if v, err := g.SetView("serial", 0, 0, 25, len(portsList)+3); err != nil {
-		if !errors.Is(err, gocui.ErrUnknownView) {
-			return err
-		}
-		v.Title = "port List"
-
-		for i, text := range portsList {
-			fmt.Fprintln(v, "port №", i, ":", text)
-		}
-		fmt.Fprintln(v, " ")
-		fmt.Fprintln(v, "Please set port number:")
-	}
-	return nil
-}
+var text_ string
 
 func NewLabel(name string, x, y int, body string) *Label {
 	lines := strings.Split(body, "\n")
@@ -153,7 +96,7 @@ func SetFocus(name string) func(g *gocui.Gui) error {
 	}
 }
 
-func inputMenu(ports []string, ch chan string) {
+func exampleMain() {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -162,14 +105,17 @@ func inputMenu(ports []string, ch chan string) {
 
 	g.Cursor = true
 
-	portsList = ports
-
-	portInfo := NewPortInfoWidget("ports", 1, 1, helpText)
-	input := NewInput("input", 0, len(portsList)+3, 25, 2)
+	label := NewLabel("label", 1, 1, "Name")
+	input := NewInput("input", 7, 1, 20, 10)
 	focus := gocui.ManagerFunc(SetFocus("input"))
-	g.SetManager(portInfo, input, focus)
+	g.SetManager(label, input, focus)
 
-	if err := initKeybindings(g, ch); err != nil {
+	/*if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
+		log.Panicln(err)
+	}
+	*/
+
+	if err := initKeybindings(g); err != nil {
 		log.Panicln(err)
 	}
 
@@ -178,7 +124,7 @@ func inputMenu(ports []string, ch chan string) {
 	}
 }
 
-func initKeybindings(g *gocui.Gui, ch chan string) error {
+func initKeybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return gocui.ErrQuit
@@ -187,23 +133,16 @@ func initKeybindings(g *gocui.Gui, ch chan string) error {
 	}
 	if err := g.SetKeybinding("", gocui.KeyEnter, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			if err := g.DeleteView("ports"); err != nil {
-				if err != gocui.ErrUnknownView {
-					panic(err)
-				}
-			}
-			if err := g.DeleteView("input"); err != nil {
-				if err != gocui.ErrUnknownView {
-					panic(err)
-				}
-			}
 
-			i, _ := strconv.Atoi(text_)
-			ch <- portsList[i]
-			return err
+			return gocui.ErrQuit
 		}); err != nil {
 		return err
 	}
 
 	return nil
 }
+
+func quit(g *gocui.Gui, v *gocui.View) error {
+	return gocui.ErrQuit
+}
+

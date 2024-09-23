@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"github.com/jroimartin/gocui"
+	"go.bug.st/serial"
 	//"github.com/awesome-gocui/gocui"
 )
 
@@ -194,24 +195,23 @@ func viewArrayFilling() {
 	}
 }
 
+func changeSerialPort() serial.Port {
+	portCn := make(chan string)
+	potrs := serialDataExchange.GetSerialPortList()
+	go inputMenu(potrs, portCn)
+	return serialDataExchange.OpenSerialPort(19200, 8, <-portCn)
+}
 func Menu(serialAcces *sync.Mutex) {
 	chRadioSettings := make(chan map[byte]string, 30)
 	guiCn := make(chan *gocui.Gui)
-	serialListCh := make(chan []string)
-
 	viewArrayFilling()
-
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer g.Close()
 
-	ports := serialDataExchange.GetSerialPortList()
-	go serialPortSelectMenu(g, ports, serialListCh)
-	port := serialDataExchange.OpenSerialPort(19200, 8, serialListCh, ports)
-
-	go ic78civCmd.CivCmdParser(port, serialAcces, chRadioSettings)
+	go ic78civCmd.CivCmdParser(changeSerialPort(), serialAcces, chRadioSettings)
 
 	g.SetManagerFunc(layoutSetView)
 
@@ -257,6 +257,13 @@ func layoutSetView(g *gocui.Gui) error {
 }
 
 func initKeybindings_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
+	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return err
+		}); err != nil {
+		return err
+	}
+
 	if err := g.SetKeybinding("", gocui.KeyCtrlN, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return newView_(g, guiCh)
@@ -274,4 +281,8 @@ func initKeybindings_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	}
 
 	return nil
+}
+
+func quit(g *gocui.Gui, v *gocui.View) error {
+	return gocui.ErrQuit
 }

@@ -32,7 +32,7 @@ func Exemple() {
 
 	g.SetManagerFunc(layoutE)
 
-	if err := initKeybindings(g); err != nil {
+	if err := initKeybindings_(g); err != nil {
 		log.Panicln(err)
 	}
 	if err := newView(g); err != nil {
@@ -63,7 +63,7 @@ func layoutE(g *gocui.Gui) error {
 	return nil
 }
 
-func initKeybindings(g *gocui.Gui) error {
+func initKeybindings_(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return gocui.ErrQuit

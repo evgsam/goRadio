@@ -17,35 +17,14 @@ func GetSerialPortList() []string {
 	return ports
 }
 
-func OpenSerialPort(BaudRate int, DataBits uint8, serialListCh chan []string, ports []string) serial.Port {
-	var portsnum int
-	myPort := <-serialListCh
-	//	close(serialListCh)
-	for i, val := range ports {
-		if val == myPort[0] {
-			portsnum = i
-			break
-		}
-	}
-	/*fmt.Print("Ports list: \n")
-	for _, port := range ports {
-		fmt.Printf("Port #%d: %v\n", portsnum, port)
-		portsnum++
-	}
-	if len(ports) > 1 {
-		fmt.Print("Please, select port:")
-		fmt.Scan(&portsnum)
-	} else {
-		portsnum = 0
-	}
-	*/
+func OpenSerialPort(BaudRate int, DataBits uint8, ports string) serial.Port {
 	mode := &serial.Mode{
 		BaudRate: BaudRate,
 		Parity:   serial.NoParity,
 		DataBits: int(DataBits),
 		StopBits: serial.OneStopBit,
 	}
-	port, err := serial.Open(ports[portsnum], mode)
+	port, err := serial.Open(ports, mode)
 	if err != nil {
 		log.Fatal(err)
 	}
