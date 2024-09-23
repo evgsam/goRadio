@@ -36,17 +36,19 @@ const (
 )
 
 var (
-	viewsNames     = make(map[byte]string)
-	viewArray      = make([]viewsStruct, 0)
-	err            error
-	newGui         bool
-	dataUpdateFlag bool
+	viewsNames      = make(map[byte]string)
+	infoViewArray   = make([]viewsStruct, 0)
+	hotkeyViewArray = make([]viewsStruct, 0)
+	err             error
+	newGui          bool
+	dataUpdateFlag  bool
 )
 
 type viewsStruct struct {
 	cmd            commandName
 	name           string
 	x0, y0, x1, y1 int
+	value          string
 }
 
 func viewsValueUpdate(g *gocui.Gui, name, value string) error {
@@ -103,7 +105,7 @@ func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	}
 	defer g.Close()
 
-	g.SetManagerFunc(layoutMainMenu)
+	g.SetManagerFunc(layoutSetView)
 
 	if err := initKeybindings_(g, guiCh); err != nil {
 		log.Panicln(err)
@@ -122,7 +124,7 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 	if !newGui {
 		newGui = true
 		dataUpdateFlag = false
-		for _, v := range viewArray {
+		for _, v := range infoViewArray {
 			_ = delView_(g, v.name)
 		}
 		g.Close()
@@ -157,22 +159,23 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 
 func Menu(ch chan map[byte]string) {
 	guiCn := make(chan *gocui.Gui)
-	viewArray = []viewsStruct{
-		{name: "Hotkey", x0: 0, y0: 0, x1: 50, y1: 7},
-		{name: "F1", x0: 1, y0: 1, x1: 8, y1: 3},
-		{name: "F2", x0: 9, y0: 1, x1: 16, y1: 3},
-		{name: "F3", x0: 17, y0: 1, x1: 24, y1: 3},
-		{name: "F4", x0: 25, y0: 1, x1: 32, y1: 3},
-		{name: "F5", x0: 33, y0: 1, x1: 40, y1: 3},
-		{name: "F6", x0: 41, y0: 1, x1: 48, y1: 3},
+	hotkeyViewArray = []viewsStruct{
+		{name: "Hotkey for change settings", x0: 0, y0: 0, x1: 50, y1: 7},
+		{name: "F1", x0: 1, y0: 1, x1: 8, y1: 3, value: "help"},
+		{name: "F2", x0: 9, y0: 1, x1: 16, y1: 3, value: "s.port"},
+		{name: "F3", x0: 17, y0: 1, x1: 24, y1: 3, value: "freque"},
+		{name: "F4", x0: 25, y0: 1, x1: 32, y1: 3, value: "mode"},
+		{name: "F5", x0: 33, y0: 1, x1: 40, y1: 3, value: "ATT"},
+		{name: "F6", x0: 41, y0: 1, x1: 48, y1: 3, value: "preamp"},
 
-		{name: "F7", x0: 1, y0: 4, x1: 8, y1: 6},
-		{name: "F8", x0: 9, y0: 4, x1: 16, y1: 6},
-		{name: "F9", x0: 17, y0: 4, x1: 24, y1: 6},
-		{name: "F10", x0: 25, y0: 4, x1: 32, y1: 6},
-		{name: "F11", x0: 33, y0: 4, x1: 40, y1: 6},
-		{name: "F12", x0: 41, y0: 4, x1: 48, y1: 6},
-
+		{name: "F7", x0: 1, y0: 4, x1: 8, y1: 6, value: "AF-"},
+		{name: "F8", x0: 9, y0: 4, x1: 16, y1: 6, value: "AF+"},
+		{name: "F9", x0: 17, y0: 4, x1: 24, y1: 6, value: "RF-"},
+		{name: "F10", x0: 25, y0: 4, x1: 32, y1: 6, value: "RF+"},
+		{name: "F11", x0: 33, y0: 4, x1: 40, y1: 6, value: "SQL-"},
+		{name: "F12", x0: 41, y0: 4, x1: 48, y1: 6, value: "SQL+"},
+	}
+	infoViewArray = []viewsStruct{
 		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 8, x1: 50, y1: 15},
 		{cmd: status, name: "status", x0: 1, y0: 9, x1: 16, y1: 11},
 		{cmd: mode, name: "mode", x0: 17, y0: 9, x1: 27, y1: 11},
@@ -183,7 +186,7 @@ func Menu(ch chan map[byte]string) {
 		{cmd: rf, name: "RF", x0: 28, y0: 12, x1: 38, y1: 14},
 		{cmd: sql, name: "SQL", x0: 39, y0: 12, x1: 49, y1: 14},
 	}
-	for _, v := range viewArray {
+	for _, v := range infoViewArray {
 		viewsNames[byte(v.cmd)] = v.name
 	}
 	g, err := gocui.NewGui(gocui.OutputNormal)
@@ -192,7 +195,7 @@ func Menu(ch chan map[byte]string) {
 	}
 	defer g.Close()
 
-	g.SetManagerFunc(layoutMainMenu)
+	g.SetManagerFunc(layoutSetView)
 
 	if err := initKeybindings_(g, guiCn); err != nil {
 		log.Panicln(err)
@@ -205,12 +208,13 @@ func Menu(ch chan map[byte]string) {
 
 }
 
-func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int) error {
+func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string) error {
 	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
 		v.Title = name
+		fmt.Fprintln(v, value)
 	}
 	return nil
 }
@@ -224,22 +228,13 @@ func delView_(g *gocui.Gui, name string) error {
 	return nil
 }
 
-func layoutMainMenu(g *gocui.Gui) error {
-	for _, v := range viewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
+func layoutSetView(g *gocui.Gui) error {
+	for _, v := range hotkeyViewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value)
 	}
-	return nil
-}
-
-func layoutChangeSettings(g *gocui.Gui) error {
-	for _, v := range viewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1)
+	for _, v := range infoViewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, "")
 	}
-	return nil
-}
-
-func layoutNewMenu(g *gocui.Gui) error {
-	_ = setView(g, "set", 0, 0, 50, 7)
 	return nil
 }
 
