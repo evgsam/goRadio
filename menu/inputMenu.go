@@ -168,22 +168,36 @@ func initKeybindings(g *gocui.Gui, ch chan string) error {
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyEnter, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
-			if err := g.DeleteView("ports"); err != nil {
-				if err != gocui.ErrUnknownView {
-					panic(err)
-				}
-			}
-			if err := g.DeleteView("input"); err != nil {
-				if err != gocui.ErrUnknownView {
-					panic(err)
-				}
-			}
-			i, _ := strconv.Atoi(text_)
-			ch <- portsList[i]
+
+	/*
+		err = g.SetKeybinding("", '1', gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+			_, err := g.SetViewOnTop("v1")
 			return err
-		}); err != nil {
+		})
+		if err != nil {
+			return err
+		}
+	*/
+
+	if err := g.SetKeybinding("", gocui.KeyEnter, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
+		/*if err := g.DeleteView("ports"); err != nil {
+			if err != gocui.ErrUnknownView {
+				panic(err)
+			}
+		}
+		if err := g.DeleteView("input"); err != nil {
+			if err != gocui.ErrUnknownView {
+				panic(err)
+			}
+		}
+		g.Close()
+		*/
+		_, err := g.SetViewOnBottom("ports")
+		_, err = g.SetViewOnBottom("input")
+		i, _ := strconv.Atoi(text_)
+		ch <- portsList[i]
+		return err
+	}); err != nil {
 		return err
 	}
 
