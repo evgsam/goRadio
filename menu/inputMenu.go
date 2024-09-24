@@ -33,24 +33,8 @@ type PortWidget struct {
 	body string
 }
 
-func NewPortInfoWidget(name string, x, y int, body []string) *PortWidget {
-	for _, value := range body {
-		lines := strings.Split(value, "\n")
-
-		w := 0
-		for _, l := range lines {
-			if len(l) > w {
-				w = len(l)
-			}
-		}
-		h := len(lines) + 1
-		w = w + 1
-
-		return &PortWidget{name: name, x: x, y: y, w: w, h: h, body: value}
-	}
-
-	t := "Please set port number:"
-	lines := strings.Split(t, "\n")
+func NewPortInfoWidget(name string, x, y int, body string) *PortWidget {
+	lines := strings.Split(body, "\n")
 	w := 0
 	for _, l := range lines {
 		if len(l) > w {
@@ -58,7 +42,8 @@ func NewPortInfoWidget(name string, x, y int, body []string) *PortWidget {
 		}
 	}
 	h := len(lines) + 1
-	return &PortWidget{name: name, x: x, y: y, w: w, h: h, body: t}
+	w = w + 1
+	return &PortWidget{name: name, x: x, y: y, w: w, h: h, body: body}
 }
 
 func (w *PortWidget) Layout(g *gocui.Gui) error {
@@ -70,38 +55,10 @@ func (w *PortWidget) Layout(g *gocui.Gui) error {
 		fmt.Fprint(v, w.body)
 	}
 	return nil
-
-	/*
-	   maxLen := 0
-
-	   	for _, s := range portsList {
-	   		if len(s) > maxLen {
-	   			maxLen = len(s)
-	   		}
-	   	}
-
-	   //maxX, maxY := g.Size()
-
-	   	if v, err := g.SetView("serial", 0, 0, 25, len(portsList)+3); err != nil {
-	   		if !errors.Is(err, gocui.ErrUnknownView) {
-	   			return err
-	   		}
-	   		v.Title = "port List"
-
-	   		for i, text := range portsList {
-	   			fmt.Fprintln(v, "port №", i, ":", text)
-	   		}
-	   		fmt.Fprintln(v, " ")
-	   		fmt.Fprintln(v, "Please set port number:")
-	   	}
-
-	   return nil
-	*/
 }
 
 func NewLabel(name string, x, y int, body string) *Label {
 	lines := strings.Split(body, "\n")
-
 	w := 0
 	for _, l := range lines {
 		if len(l) > w {
@@ -183,9 +140,14 @@ func inputMenu( /*ports []string,*/ ch chan string, inputCh chan *inputFormsStru
 	g.Cursor = true
 
 	if p.flag {
+		t := ""
+		for i, s := range p.ports {
+			t += "Port №" + strconv.Itoa(i) + ":" + s + "\n"
+		}
+		t += "Please select port number:"
 		portsList = p.ports
-		portInfo := NewPortInfoWidget("ports", 1, 1, p.ports)
-		input := NewInput("input", 0, len(portsList)+3, 25, 2)
+		portInfo := NewPortInfoWidget("ports", 1, 1, t)
+		input := NewInput("input", 1, len(p.ports)+3, 27, 2)
 		focus := gocui.ManagerFunc(SetFocus("input"))
 		g.SetManager(portInfo, input, focus)
 	}
@@ -218,7 +180,6 @@ func initKeybindings(g *gocui.Gui, ch chan string) error {
 					panic(err)
 				}
 			}
-
 			i, _ := strconv.Atoi(text_)
 			ch <- portsList[i]
 			return err
