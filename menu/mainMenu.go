@@ -56,6 +56,12 @@ type viewsStruct struct {
 	value          string
 }
 
+type inputFormsStruct struct {
+	flag      bool
+	ports     []string
+	inputName string
+}
+
 func viewsValueUpdate(g *gocui.Gui, name, value string) error {
 	v, err := g.View(name)
 	if err != nil {
@@ -135,28 +141,6 @@ func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
 		g.Close()
 		newGui = true
 		inputMenuForm(guiCh)
-		//widgets()
-		/*g, err = gocui.NewGui(gocui.OutputNormal)
-		if err != nil {
-			log.Panicln(err)
-		}
-		defer g.Close()
-
-		g.SetManagerFunc(layoutNewMenu)
-		if err := initKeybindings_(g, guiCh); err != nil {
-			log.Panicln(err)
-		}
-
-
-		if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
-			log.Panicln(err)
-		}
-		*/
-		/*	g.Update(func(g *gocui.Gui) error {
-				return nil
-			})
-		*/
-
 	}
 
 	return nil
@@ -197,13 +181,24 @@ func viewArrayFilling() {
 
 func changeSerialPort() serial.Port {
 	portCn := make(chan string)
-	potrs := serialDataExchange.GetSerialPortList()
-	go inputMenu(potrs, portCn)
+	portsList := serialDataExchange.GetSerialPortList()
+	inputCh := make(chan *inputFormsStruct)
+
+	go inputMenu(portCn, inputCh)
+	go func() {
+		inputF := inputFormsStruct{
+			flag:  true,
+			ports: portsList,
+		}
+		inputCh <- &inputF // Отправляем структуру по каналу
+	}()
+
 	return serialDataExchange.OpenSerialPort(19200, 8, <-portCn)
 }
 func Menu(serialAcces *sync.Mutex) {
 	chRadioSettings := make(chan map[byte]string, 30)
 	guiCn := make(chan *gocui.Gui)
+
 	viewArrayFilling()
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
