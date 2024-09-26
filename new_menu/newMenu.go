@@ -3,7 +3,9 @@ package newmenu
 import (
 	"errors"
 	"fmt"
+	"goRadio/serialDataExchange"
 	"log"
+	"strconv"
 
 	"github.com/jroimartin/gocui"
 )
@@ -14,6 +16,11 @@ var (
 	inputViewArray  = make([]viewsStruct, 0)
 )
 
+const (
+	F2_title = "F2 Serial port select"
+	F3_title = "F3 Enter freque"
+)
+
 type viewsStruct struct {
 	name           string
 	x0, y0, x1, y1 int
@@ -22,9 +29,16 @@ type viewsStruct struct {
 }
 
 func viewArrayFilling() {
+	portsList := serialDataExchange.GetSerialPortList()
+	t := ""
+	for i, v := range portsList {
+		t += "Portn #" + strconv.Itoa(i) + ":" + v + "\n"
+	}
+	t += "Plese enter port number:"
+
 	inputViewArray = []viewsStruct{
-		{name: "F2_input", x0: 6, y0: 1, x1: 33, y1: 7, value: "Serial port select", bottomFlag: true},
-		{name: "F3_input", x0: 17, y0: 1, x1: 40, y1: 6, value: "Freque input", bottomFlag: true},
+		{name: F2_title, x0: 6, y0: 1, x1: 33, y1: 7, value: t, bottomFlag: true},
+		{name: F3_title, x0: 17, y0: 1, x1: 40, y1: 6, value: "Freque input", bottomFlag: true},
 	}
 
 	hotkeyViewArray = []viewsStruct{
@@ -124,7 +138,7 @@ func initKeybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyF2, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		var ind int
 		for i, v := range inputViewArray {
-			if v.name == "F2_input" {
+			if v.name == F2_title {
 				ind = i
 			}
 		}
@@ -147,7 +161,7 @@ func initKeybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
 		var ind int
 		for i, v := range inputViewArray {
-			if v.name == "F3_input" {
+			if v.name == F3_title {
 				ind = i
 			}
 		}
