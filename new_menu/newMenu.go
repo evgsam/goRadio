@@ -73,6 +73,58 @@ func viewArrayFilling() {
 
 }
 
+// ===========================
+var text_ string
+
+type Input struct {
+	name      string
+	x, y      int
+	w         int
+	maxLength int
+}
+
+func NewInput(name string, x, y, w, maxLength int) *Input {
+	return &Input{name: name, x: x, y: y, w: w, maxLength: maxLength}
+}
+
+func (i *Input) Layout(g *gocui.Gui) error {
+	v, err := g.SetView(i.name, i.x, i.y, i.x+i.w, i.y+2)
+	if err != nil {
+		if err != gocui.ErrUnknownView {
+			return err
+		}
+		v.Editor = i
+		v.Editable = true
+	}
+	return nil
+}
+
+func (i *Input) Edit(v *gocui.View, key gocui.Key, ch rune, mod gocui.Modifier) {
+	cx, _ := v.Cursor()
+	ox, _ := v.Origin()
+	limit := ox+cx+1 > i.maxLength
+	switch {
+	case ch != 0 && mod == 0 && !limit:
+		text_ += string(ch)
+		v.EditWrite(ch)
+	case key == gocui.KeySpace && !limit:
+		text_ += string(ch)
+		v.EditWrite(' ')
+	case key == gocui.KeyBackspace || key == gocui.KeyBackspace2:
+		text_ = text_[:len(text_)-1]
+		v.EditDelete(true)
+	}
+}
+
+func SetFocus(name string) func(g *gocui.Gui) error {
+	return func(g *gocui.Gui) error {
+		_, err := g.SetCurrentView(name)
+		return err
+	}
+}
+
+//===========================
+
 func NewMenu() {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
@@ -112,9 +164,11 @@ func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string, flag b
 			return err
 		}
 		if name == F2_input {
-			v.Frame = false
+			//v.Frame = false
 			v.Title = ""
-			fmt.Fprintln(v, "port")
+			//fmt.Fprintln(v, "port")
+			v.Editable = true
+			_, _ = g.SetCurrentView(name)
 		} else {
 			v.Title = name
 		}
