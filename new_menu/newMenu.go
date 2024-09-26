@@ -18,6 +18,7 @@ var (
 
 const (
 	F2_title = "F2 Serial port select"
+	F2_input = "Input:"
 	F3_title = "F3 Enter freque"
 )
 
@@ -38,6 +39,7 @@ func viewArrayFilling() {
 
 	inputViewArray = []viewsStruct{
 		{name: F2_title, x0: 6, y0: 1, x1: 33, y1: 7, value: t, bottomFlag: true},
+		{name: F2_input, x0: 6, y0: 6, x1: 33, y1: 7, value: t, bottomFlag: false},
 		{name: F3_title, x0: 17, y0: 1, x1: 40, y1: 6, value: "Freque input", bottomFlag: true},
 	}
 
@@ -109,7 +111,14 @@ func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string, flag b
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
-		v.Title = name
+		if name == F2_input {
+			v.Frame = false
+			v.Title = ""
+			fmt.Fprintln(v, "port")
+		} else {
+			v.Title = name
+		}
+
 		fmt.Fprintln(v, value)
 		if flag {
 			_, err = g.SetViewOnBottom(name)
