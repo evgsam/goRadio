@@ -53,7 +53,7 @@ func viewArrayFilling() {
 	}
 }
 
-func NewMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string) {
+func NewMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string, chDataSet chan map[byte]string) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -65,7 +65,7 @@ func NewMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string) {
 	g.SetManagerFunc(layoutSetView)
 
 	go dataToDisplay(g, chRadioSettings)
-	if err := initKeybindings(g, portCh); err != nil {
+	if err := initKeybindings(g, portCh, chDataSet); err != nil {
 		log.Panicln(err)
 	}
 
@@ -98,7 +98,7 @@ func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string) error 
 	return nil
 }
 
-func initKeybindings(g *gocui.Gui, portCh chan serial.Port) error {
+func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[byte]string) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
@@ -112,7 +112,7 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port) error {
 
 	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return freqSetMenu(g)
+			return freqSetMenu(g, chDataSet)
 		}); err != nil {
 		return err
 	}

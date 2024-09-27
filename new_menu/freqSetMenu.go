@@ -8,6 +8,7 @@ import (
 
 type signupFreqSet struct {
 	*component.Form
+	chDataSet chan map[byte]string
 }
 
 func (s *signupFreqSet) inputRegist(g *gocui.Gui, v *gocui.View) error {
@@ -15,20 +16,22 @@ func (s *signupFreqSet) inputRegist(g *gocui.Gui, v *gocui.View) error {
 		return nil
 	}
 
-	/*var text string
+	var text string
 
 	for _, val := range s.GetFieldTexts() {
 		text = val
 	}
 
-	*/
 	s.Close(g, v)
+	s.chDataSet <- map[byte]string{
+		byte(freqRead): text,
+	}
 	return nil
 }
 
-func freqSetMenu(g *gocui.Gui) error {
+func freqSetMenu(g *gocui.Gui, chDataSet chan map[byte]string) error {
 	signupFreq := &signupFreqSet{
-		component.NewForm(g, "Freque set", 0, 0, 0, 0),
+		component.NewForm(g, "Freque set", 0, 0, 0, 0), chDataSet,
 	}
 	signupFreq.AddInputField("Freque, hz", 11, 9).
 		AddValidate("required input", requireValidator)

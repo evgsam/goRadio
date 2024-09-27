@@ -11,11 +11,13 @@ import (
 
 func main() {
 	chRadioSettings := make(chan map[byte]string, 30)
+	chSetData := make(chan map[byte]string, 10)
 	var serialAccess sync.Mutex
 	portCh := make(chan serial.Port)
 
-	go ic78civCmd.CivCmdParser(portCh, &serialAccess, chRadioSettings)
-	newmenu.NewMenu(portCh, chRadioSettings)
+	go ic78civCmd.CivCmdParser(portCh, &serialAccess, chRadioSettings, chSetData)
+
+	newmenu.NewMenu(portCh, chRadioSettings, chSetData)
 	for {
 		time.Sleep(10 * time.Second)
 	}
