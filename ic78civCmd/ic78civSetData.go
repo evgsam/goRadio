@@ -18,6 +18,7 @@ func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 			case byte(mode):
 				setMode(port, byte(transiverAddr), val)
 			case byte(att):
+				setAtt(port, byte(transiverAddr), val)
 			case byte(preamp):
 				setPreamp(port, byte(transiverAddr), val)
 			case byte(freqRead):
@@ -56,6 +57,33 @@ func setAfRfSql(port serial.Port, trAddr byte, c commandName, level int) error {
 	buf := make([]byte, 7)
 	buf = []byte{byte(preambleCmd), byte(preambleCmd), trAddr, byte(controllerAddrCmd), byte(afrfsqlCmd),
 		subcmd, byteArrToBCD(levelBuf, 2)[1], byteArrToBCD(levelBuf, 2)[0], byte(endMsgCmd)}
+	_, readBuff, err := sendDataToTransiver(port, buf)
+	if err != nil {
+		return err
+	}
+	if slices.Index(readBuff, byte(ngCode)) > 0 {
+		return errors.New("transceiver sent NG")
+	}
+	return nil
+}
+
+func setAtt(port serial.Port, trAddr byte, att string) error {
+	var cmd byte
+	switch att {
+	case "NO":
+		cmd = 0x00
+	case "YES":
+		cmd = 0x20
+	case "+":
+		if currentAtt == 0x00 {
+			cmd = 0x20
+		} else {
+			cmd = 0x00
+		}
+
+	}
+	buf := make([]byte, 7)
+	buf = []byte{byte(preambleCmd), byte(preambleCmd), trAddr, byte(controllerAddrCmd), byte(attCmd), cmd, byte(endMsgCmd)}
 	_, readBuff, err := sendDataToTransiver(port, buf)
 	if err != nil {
 		return err
