@@ -21,6 +21,8 @@ var (
 	sql_data        uint32
 	adr_data        byte
 	currentMode     byte
+	currentAtt      byte
+	currentPreamp   byte
 )
 
 func dataRequest(port serial.Port, myic78civCommand *civCommand) {
@@ -88,8 +90,10 @@ func switchMode(data byte) string {
 func switchATT(data byte) string {
 	switch data {
 	case 0x00:
+		currentAtt = 0x00
 		return "NO"
 	case 0x20:
+		currentAtt = 0x20
 		return "YES"
 	}
 	return ""
