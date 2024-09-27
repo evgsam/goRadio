@@ -151,6 +151,12 @@ func setPreamp(port serial.Port, trAddr byte, preamp string) error {
 		cmd = 0x00
 	case "P.AMP":
 		cmd = 0x01
+	case "+":
+		if currentPreamp == 0x00 {
+			cmd = 0x01
+		} else {
+			cmd = 0x00
+		}
 	}
 	buf := make([]byte, 7)
 	buf = []byte{byte(preambleCmd), byte(preambleCmd), trAddr, byte(controllerAddrCmd), byte(preampCmd), byte(preampSubCmd), cmd, byte(endMsgCmd)}

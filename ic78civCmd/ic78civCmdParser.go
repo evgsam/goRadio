@@ -143,10 +143,12 @@ func parser(buffer []byte, ch chan map[byte]string) {
 	case byte(preampCmd):
 		switch buffer[2] {
 		case 0x00:
+			currentPreamp = 0x00
 			ch <- map[byte]string{
 				byte(preamp): "OFF",
 			}
 		case 0x01:
+			currentPreamp = 0x01
 			ch <- map[byte]string{
 				byte(preamp): "P.AMP",
 			}
