@@ -8,12 +8,12 @@ import (
 	"go.bug.st/serial"
 )
 
-type signup struct {
+type signupSpSelect struct {
 	*component.Form
 	portCh chan serial.Port
 }
 
-func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
+func (s *signupSpSelect) radioRegist(g *gocui.Gui, v *gocui.View) error {
 	if !s.Validate() {
 		return nil
 	}
@@ -28,22 +28,15 @@ func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
 	return nil
 }
 
-func requireValidator(value string) bool {
-	if value == "" {
-		return false
-	}
-	return true
-}
-
 func spSelectMenu(g *gocui.Gui, portCh chan serial.Port) error {
-	signup := &signup{
+	signup := &signupSpSelect{
 		component.NewForm(g, "Select Port", 0, 0, 0, 0), portCh,
 	}
 
 	signup.AddRadio(" ", 0).
 		SetMode(component.VerticalMode).
 		AddOptions(serialDataExchange.GetSerialPortList()...)
-	signup.AddButton("Ok", signup.regist)
+	signup.AddButton("Ok", signup.radioRegist)
 	signup.AddButton("Cancel", signup.Close)
 	signup.Draw()
 	return nil

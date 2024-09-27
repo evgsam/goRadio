@@ -28,3 +28,10 @@ type viewsStruct struct {
 	x0, y0, x1, y1 int
 	value          string
 }
+
+func requireValidator(value string) bool {
+	if value == "" {
+		return false
+	}
+	return true
+}

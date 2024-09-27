@@ -110,6 +110,13 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port) error {
 		return err
 	}
 
+	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return freqSetMenu(g)
+		}); err != nil {
+		return err
+	}
+
 	return nil
 }
 
