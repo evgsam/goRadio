@@ -20,6 +20,7 @@ var (
 	rf_data         uint32
 	sql_data        uint32
 	adr_data        byte
+	currentMode     byte
 )
 
 func dataRequest(port serial.Port, myic78civCommand *civCommand) {
@@ -66,14 +67,19 @@ func splitByFD(adr byte, data []byte) []byte {
 func switchMode(data byte) string {
 	switch data {
 	case 0x00:
+		currentMode = 0x00
 		return "LSB"
 	case 0x01:
+		currentMode = 0x01
 		return "USB"
 	case 0x02:
+		currentMode = 0x02
 		return "AM"
 	case 0x03:
+		currentMode = 0x03
 		return "CW"
 	case 0x04:
+		currentMode = 0x04
 		return "RTTY"
 	}
 	return ""

@@ -75,10 +75,16 @@ func setMode(port serial.Port, trAddr byte, mode string) error {
 		arg = 0x01
 	case "AM":
 		arg = 0x02
+	case "CW":
+		arg = 0x03
 	case "RTTY":
 		arg = 0x04
-	case "CW":
-		arg = 0x07
+	case "+":
+		if currentMode != 0x04 {
+			arg = currentMode + 1
+		} else {
+			arg = 0x00
+		}
 	}
 	buf := make([]byte, 7)
 	buf = []byte{byte(preambleCmd), byte(preambleCmd), trAddr, byte(controllerAddrCmd), byte(setModeCmd), arg, byte(endMsgCmd)}
