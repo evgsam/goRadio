@@ -15,21 +15,14 @@ func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
 	if !s.Validate() {
 		return nil
 	}
-	/*var text string
+
+	var text string
 
 	for _, val := range s.GetSelectedRadios() {
 		text = val
 	}
-
-	modal := component.NewModal(g, 0, 0, 30).SetText(text)
-	modal.AddButton("OK", gocui.KeyEnter, func(g *gocui.Gui, v *gocui.View) error {
-		modal.Close()
-		s.SetCurrentItem(s.GetCurrentItem())
-		return nil
-	})
-	modal.Draw()
-	*/
 	s.Close(g, v)
+	_ = serialDataExchange.OpenSerialPort(19200, 8, text)
 
 	return nil
 }
@@ -49,9 +42,6 @@ func spSelectMenu(g *gocui.Gui) error {
 	signup.AddRadio(" ", 0).
 		SetMode(component.VerticalMode).
 		AddOptions(serialDataExchange.GetSerialPortList()...)
-
-	// add button
-
 	signup.AddButton("Ok", signup.regist)
 	signup.AddButton("Cancel", signup.Close)
 	signup.Draw()
