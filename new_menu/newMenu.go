@@ -3,9 +3,7 @@ package newmenu
 import (
 	"errors"
 	"fmt"
-	"goRadio/serialDataExchange"
 	"log"
-	"strconv"
 
 	"github.com/jroimartin/gocui"
 	"go.bug.st/serial"
@@ -21,18 +19,6 @@ const (
 //================================================================
 
 func viewArrayFilling() {
-	portsList := serialDataExchange.GetSerialPortList()
-	t := ""
-	for i, v := range portsList {
-		t += "Portn #" + strconv.Itoa(i) + ":" + v + "\n"
-	}
-	t += "Plese enter port number:"
-
-	inputViewArray = []viewsStruct{
-		{name: F2_title, x0: 6, y0: 1, x1: 33, y1: 7, value: t, bottomFlag: true},
-		{name: F3_title, x0: 17, y0: 1, x1: 40, y1: 6, value: "Freque input", bottomFlag: true},
-	}
-
 	hotkeyViewArray = []viewsStruct{
 		{name: "Hotkey for change settings", x0: 0, y0: 0, x1: 50, y1: 7},
 		{name: "F1", x0: 1, y0: 1, x1: 8, y1: 3, value: "help"},
@@ -90,41 +76,26 @@ func NewMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string) {
 
 func layoutSetView(g *gocui.Gui) error {
 	for _, v := range hotkeyViewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value, false)
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value)
 	}
 	for _, v := range infoViewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, "", false)
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, "")
 	}
 	for _, v := range inputViewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value, v.bottomFlag)
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value)
 	}
 	return nil
 }
 
-func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string, flag bool) error {
+func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string) error {
 	if v, err := g.SetView(name, x0, y0, x1, y1); err != nil {
 		if !errors.Is(err, gocui.ErrUnknownView) {
 			return err
 		}
 		v.Title = name
 		fmt.Fprintln(v, value)
-		if flag {
-			_, err = g.SetViewOnBottom(name)
-		}
 	}
 	return nil
-}
-
-func changeBottomFlag(p *viewsStruct) {
-	p.bottomFlag = !p.bottomFlag
-}
-
-func viewTopOrBottom(g *gocui.Gui, flag bool, name string) {
-	if !flag {
-		_, _ = g.SetViewOnTop(name)
-	} else {
-		_, _ = g.SetViewOnBottom(name)
-	}
 }
 
 func initKeybindings(g *gocui.Gui, portCh chan serial.Port) error {
@@ -136,29 +107,6 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port) error {
 		func(g *gocui.Gui, v *gocui.View) error {
 			return spSelectMenu(g, portCh)
 		}); err != nil {
-		return err
-	}
-
-	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		var ind int
-		for i, v := range inputViewArray {
-			if v.name == F3_title {
-				ind = i
-			}
-		}
-		p := &inputViewArray[ind]
-		p.bottomFlag = !p.bottomFlag
-		for _, v := range hotkeyViewArray {
-			viewTopOrBottom(g, v.bottomFlag, v.name)
-		}
-		for _, v := range infoViewArray {
-			viewTopOrBottom(g, v.bottomFlag, v.name)
-		}
-		for _, v := range inputViewArray {
-			viewTopOrBottom(g, v.bottomFlag, v.name)
-		}
-		return nil
-	}); err != nil {
 		return err
 	}
 

@@ -27,5 +27,4 @@ type viewsStruct struct {
 	name           string
 	x0, y0, x1, y1 int
 	value          string
-	bottomFlag     bool
 }
