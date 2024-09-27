@@ -5,10 +5,12 @@ import (
 	"goRadio/serialDataExchange"
 
 	"github.com/jroimartin/gocui"
+	"go.bug.st/serial"
 )
 
 type signup struct {
 	*component.Form
+	portCh chan serial.Port
 }
 
 func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
@@ -22,8 +24,7 @@ func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
 		text = val
 	}
 	s.Close(g, v)
-	_ = serialDataExchange.OpenSerialPort(19200, 8, text)
-
+	s.portCh <- serialDataExchange.OpenSerialPort(19200, 8, text)
 	return nil
 }
 
@@ -34,9 +35,9 @@ func requireValidator(value string) bool {
 	return true
 }
 
-func spSelectMenu(g *gocui.Gui) error {
+func spSelectMenu(g *gocui.Gui, portCh chan serial.Port) error {
 	signup := &signup{
-		component.NewForm(g, "Select Port", 0, 0, 0, 0),
+		component.NewForm(g, "Select Port", 0, 0, 0, 0), portCh,
 	}
 
 	signup.AddRadio(" ", 0).

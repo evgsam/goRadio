@@ -8,25 +8,13 @@ import (
 	"strconv"
 
 	"github.com/jroimartin/gocui"
-)
-
-var (
-	infoViewArray   = make([]viewsStruct, 0)
-	hotkeyViewArray = make([]viewsStruct, 0)
-	inputViewArray  = make([]viewsStruct, 0)
+	"go.bug.st/serial"
 )
 
 const (
 	F2_title = "F2 Serial port select"
 	F3_title = "F3 Enter freque"
 )
-
-type viewsStruct struct {
-	name           string
-	x0, y0, x1, y1 int
-	value          string
-	bottomFlag     bool
-}
 
 //=================================================================
 
@@ -61,21 +49,25 @@ func viewArrayFilling() {
 		{name: "F11", x0: 33, y0: 4, x1: 40, y1: 6, value: "SQL-"},
 		{name: "F12", x0: 41, y0: 4, x1: 48, y1: 6, value: "SQL+"},
 	}
+
 	infoViewArray = []viewsStruct{
-		{name: "IC-78Information", x0: 0, y0: 8, x1: 50, y1: 15},
-		{name: "status", x0: 1, y0: 9, x1: 16, y1: 11},
-		{name: "mode", x0: 17, y0: 9, x1: 27, y1: 11},
-		{name: "ATT", x0: 28, y0: 9, x1: 38, y1: 11},
-		{name: "preamp", x0: 39, y0: 9, x1: 49, y1: 11},
-		{name: "freque", x0: 1, y0: 12, x1: 16, y1: 14},
-		{name: "AF", x0: 17, y0: 12, x1: 27, y1: 14},
-		{name: "RF", x0: 28, y0: 12, x1: 38, y1: 14},
-		{name: "SQL", x0: 39, y0: 12, x1: 49, y1: 14},
+		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 8, x1: 50, y1: 15},
+		{cmd: status, name: "status", x0: 1, y0: 9, x1: 16, y1: 11},
+		{cmd: mode, name: "mode", x0: 17, y0: 9, x1: 27, y1: 11},
+		{cmd: att, name: "ATT", x0: 28, y0: 9, x1: 38, y1: 11},
+		{cmd: preamp, name: "preamp", x0: 39, y0: 9, x1: 49, y1: 11},
+		{cmd: freqRead, name: "freque", x0: 1, y0: 12, x1: 16, y1: 14},
+		{cmd: af, name: "AF", x0: 17, y0: 12, x1: 27, y1: 14},
+		{cmd: rf, name: "RF", x0: 28, y0: 12, x1: 38, y1: 14},
+		{cmd: sql, name: "SQL", x0: 39, y0: 12, x1: 49, y1: 14},
 	}
 
+	for _, v := range infoViewArray {
+		viewsNames[byte(v.cmd)] = v.name
+	}
 }
 
-func NewMenu() {
+func NewMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
@@ -86,7 +78,8 @@ func NewMenu() {
 
 	g.SetManagerFunc(layoutSetView)
 
-	if err := initKeybindings(g); err != nil {
+	go dataToDisplay(g, chRadioSettings)
+	if err := initKeybindings(g, portCh); err != nil {
 		log.Panicln(err)
 	}
 
@@ -134,14 +127,14 @@ func viewTopOrBottom(g *gocui.Gui, flag bool, name string) {
 	}
 }
 
-func initKeybindings(g *gocui.Gui) error {
+func initKeybindings(g *gocui.Gui, portCh chan serial.Port) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 
 	if err := g.SetKeybinding("", gocui.KeyF2, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return spSelectMenu(g)
+			return spSelectMenu(g, portCh)
 		}); err != nil {
 		return err
 	}

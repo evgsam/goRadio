@@ -159,9 +159,10 @@ func parser(buffer []byte, ch chan map[byte]string) {
 	}
 }
 
-func CivCmdParser(port serial.Port, serialAcces *sync.Mutex, chRadioSettings chan map[byte]string) {
+func CivCmdParser(portCh chan serial.Port, serialAcces *sync.Mutex, chRadioSettings chan map[byte]string) {
 	adr_data = 0x62
 	myic78civCommand = newIc78civCommand(adr_data)
+	port := <-portCh
 	go dataRequest(port, myic78civCommand)
 	chSerialData := serialDataExchange.SerialPortPoller(port, serialAcces)
 	for msg := range chSerialData {
