@@ -3,6 +3,7 @@ package newmenu
 import (
 	"errors"
 	"fmt"
+	component "goRadio/gocui-component"
 	"goRadio/serialDataExchange"
 	"log"
 	"strconv"
@@ -27,6 +28,44 @@ type viewsStruct struct {
 	value          string
 	bottomFlag     bool
 }
+
+//=================================================================
+
+type signup struct {
+	*component.Form
+}
+
+func (s *signup) regist(g *gocui.Gui, v *gocui.View) error {
+	if !s.Validate() {
+		return nil
+	}
+	/*var text string
+
+	for _, val := range s.GetSelectedRadios() {
+		text = val
+	}
+
+	modal := component.NewModal(g, 0, 0, 30).SetText(text)
+	modal.AddButton("OK", gocui.KeyEnter, func(g *gocui.Gui, v *gocui.View) error {
+		modal.Close()
+		s.SetCurrentItem(s.GetCurrentItem())
+		return nil
+	})
+	modal.Draw()
+	*/
+	s.Close(g, v)
+
+	return nil
+}
+
+func requireValidator(value string) bool {
+	if value == "" {
+		return false
+	}
+	return true
+}
+
+//================================================================
 
 func viewArrayFilling() {
 	portsList := serialDataExchange.GetSerialPortList()
@@ -82,7 +121,19 @@ func NewMenu() {
 
 	g.SetManagerFunc(layoutSetView)
 
-	if err := initKeybindings(g); err != nil {
+	signup := &signup{
+		component.NewForm(g, "Select Port", 0, 0, 0, 0),
+	}
+	signup.AddRadio(" ", 0).
+		SetMode(component.VerticalMode).
+		AddOptions("Go", "Java", "PHP", "Python")
+
+	// add button
+	signup.AddButton("Ok", signup.regist)
+	signup.AddButton("Cancel", quit)
+	//signup.Draw()
+
+	if err := initKeybindings(g, signup); err != nil {
 		log.Panicln(err)
 	}
 
@@ -130,29 +181,33 @@ func viewTopOrBottom(g *gocui.Gui, flag bool, name string) {
 	}
 }
 
-func initKeybindings(g *gocui.Gui) error {
+func initKeybindings(g *gocui.Gui, signup *signup) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
 	}
 
 	if err := g.SetKeybinding("", gocui.KeyF2, gocui.ModNone, func(g *gocui.Gui, v *gocui.View) error {
-		var ind int
-		for i, v := range inputViewArray {
-			if v.name == F2_title {
-				ind = i
+		//=========================================
+		signup.Draw()
+		// =========================================
+		/*	var ind int
+			for i, v := range inputViewArray {
+				if v.name == F2_title {
+					ind = i
+				}
 			}
-		}
-		p := &inputViewArray[ind]
-		p.bottomFlag = !p.bottomFlag
-		for _, v := range hotkeyViewArray {
-			viewTopOrBottom(g, v.bottomFlag, v.name)
-		}
-		for _, v := range infoViewArray {
-			viewTopOrBottom(g, v.bottomFlag, v.name)
-		}
-		for _, v := range inputViewArray {
-			viewTopOrBottom(g, v.bottomFlag, v.name)
-		}
+			p := &inputViewArray[ind]
+			p.bottomFlag = !p.bottomFlag
+			for _, v := range hotkeyViewArray {
+				viewTopOrBottom(g, v.bottomFlag, v.name)
+			}
+			for _, v := range infoViewArray {
+				viewTopOrBottom(g, v.bottomFlag, v.name)
+			}
+			for _, v := range inputViewArray {
+				viewTopOrBottom(g, v.bottomFlag, v.name)
+			}
+		*/
 		return nil
 	}); err != nil {
 		return err
