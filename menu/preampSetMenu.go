@@ -1,4 +1,4 @@
-package newmenu
+package menu
 
 func preampSetMenu(chDataSet chan map[byte]string) error {
 

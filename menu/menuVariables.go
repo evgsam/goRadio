@@ -1,4 +1,4 @@
-package newmenu
+package menu
 
 type commandName int
 

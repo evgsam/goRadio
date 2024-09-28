@@ -3,148 +3,16 @@ package menu
 import (
 	"errors"
 	"fmt"
-	"goRadio/ic78civCmd"
-	"goRadio/serialDataExchange"
 	"log"
-	"sync"
 
 	"github.com/jroimartin/gocui"
 	"go.bug.st/serial"
-	//"github.com/awesome-gocui/gocui"
 )
 
 const (
-	Status string = "status"
-	Mode   string = "mode"
-	ATT    string = "ATT"
-	Preamp string = "preamp"
-	Freque string = "freque"
-	AF     string = "AF"
-	RF     string = "RF"
-	SQL    string = "SQL"
+	F2_title = "F2 Serial port select"
+	F3_title = "F3 Enter freque"
 )
-
-type commandName int
-
-const (
-	freqRead commandName = iota
-	taddr
-	mode
-	att
-	af
-	rf
-	sql
-	preamp
-	status
-	mainViews
-)
-
-var (
-	viewsNames      = make(map[byte]string)
-	infoViewArray   = make([]viewsStruct, 0)
-	hotkeyViewArray = make([]viewsStruct, 0)
-	err             error
-	newGui          bool
-	dataUpdateFlag  bool
-	portSelectFlag  bool
-)
-
-type viewsStruct struct {
-	cmd            commandName
-	name           string
-	x0, y0, x1, y1 int
-	value          string
-}
-
-type inputFormsStruct struct {
-	flag      bool
-	ports     []string
-	inputName string
-}
-
-func viewsValueUpdate(g *gocui.Gui, name, value string) error {
-	v, err := g.View(name)
-	if err != nil {
-		return err
-	}
-	v.Clear()
-	fmt.Fprintln(v, value)
-	return nil
-}
-
-func dataToDisplay(ch chan map[byte]string, guiCh chan *gocui.Gui) {
-	var g *gocui.Gui
-	for {
-		if !dataUpdateFlag {
-			g = <-guiCh
-			dataUpdateFlag = true
-		}
-		m := <-ch
-		g.Update(func(g *gocui.Gui) error {
-			for key, value := range m {
-				switch key {
-				case byte(status):
-					_ = viewsValueUpdate(g, viewsNames[byte(status)], value)
-				case byte(mode):
-					_ = viewsValueUpdate(g, viewsNames[byte(mode)], value)
-				case byte(att):
-					_ = viewsValueUpdate(g, viewsNames[byte(att)], value)
-				case byte(preamp):
-					_ = viewsValueUpdate(g, viewsNames[byte(preamp)], value)
-				case byte(freqRead):
-					_ = viewsValueUpdate(g, viewsNames[byte(freqRead)], value)
-				case byte(af):
-					_ = viewsValueUpdate(g, viewsNames[byte(af)], value)
-				case byte(rf):
-					_ = viewsValueUpdate(g, viewsNames[byte(rf)], value)
-				case byte(sql):
-					_ = viewsValueUpdate(g, viewsNames[byte(sql)], value)
-				}
-			}
-			return nil
-		})
-	}
-}
-
-func delNewView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
-	newGui = false
-	g.Close()
-
-	g, err = gocui.NewGui(gocui.OutputNormal)
-	if err != nil {
-		log.Panicln(err)
-	}
-	defer g.Close()
-
-	g.SetManagerFunc(layoutSetView)
-
-	if err := initKeybindings_(g, guiCh); err != nil {
-		log.Panicln(err)
-	}
-
-	dataUpdateFlag = false
-	guiCh <- g
-
-	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
-		log.Panicln(err)
-	}
-	return nil
-}
-
-func newView_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
-	if !newGui {
-		newGui = true
-		dataUpdateFlag = false
-		for _, v := range infoViewArray {
-			_ = delView_(g, v.name)
-		}
-		g.Close()
-		newGui = true
-		inputMenuForm(guiCh)
-	}
-
-	return nil
-}
 
 func viewArrayFilling() {
 	hotkeyViewArray = []viewsStruct{
@@ -163,6 +31,7 @@ func viewArrayFilling() {
 		{name: "F11", x0: 33, y0: 4, x1: 40, y1: 6, value: "SQL-"},
 		{name: "F12", x0: 41, y0: 4, x1: 48, y1: 6, value: "SQL+"},
 	}
+
 	infoViewArray = []viewsStruct{
 		{cmd: mainViews, name: "IC-78Information", x0: 0, y0: 8, x1: 50, y1: 15},
 		{cmd: status, name: "status", x0: 1, y0: 9, x1: 16, y1: 11},
@@ -174,51 +43,42 @@ func viewArrayFilling() {
 		{cmd: rf, name: "RF", x0: 28, y0: 12, x1: 38, y1: 14},
 		{cmd: sql, name: "SQL", x0: 39, y0: 12, x1: 49, y1: 14},
 	}
+
 	for _, v := range infoViewArray {
 		viewsNames[byte(v.cmd)] = v.name
 	}
 }
 
-func changeSerialPort() serial.Port {
-	portCn := make(chan string)
-	portsList := serialDataExchange.GetSerialPortList()
-	inputCh := make(chan *inputFormsStruct)
-
-	go inputMenu(portCn, inputCh)
-	go func() {
-		inputF := inputFormsStruct{
-			flag:  true,
-			ports: portsList,
-		}
-		inputCh <- &inputF // Отправляем структуру по каналу
-	}()
-
-	return serialDataExchange.OpenSerialPort(19200, 8, <-portCn)
-}
-func Menu(serialAcces *sync.Mutex) {
-	chRadioSettings := make(chan map[byte]string, 30)
-	guiCn := make(chan *gocui.Gui)
-
-	viewArrayFilling()
+func MainMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string, chDataSet chan map[byte]string) {
 	g, err := gocui.NewGui(gocui.OutputNormal)
 	if err != nil {
 		log.Panicln(err)
 	}
 	defer g.Close()
-
-	go ic78civCmd.CivCmdParser(changeSerialPort(), serialAcces, chRadioSettings)
-
+	viewArrayFilling()
 	g.SetManagerFunc(layoutSetView)
 
-	if err := initKeybindings_(g, guiCn); err != nil {
-		log.Panicln(err)
-	}
-	go dataToDisplay(chRadioSettings, guiCn)
-	guiCn <- g
-	if err := g.MainLoop(); err != nil && !errors.Is(err, gocui.ErrQuit) {
+	go dataToDisplay(g, chRadioSettings)
+	if err := initKeybindings(g, portCh, chDataSet); err != nil {
 		log.Panicln(err)
 	}
 
+	if err := g.MainLoop(); err != nil && err != gocui.ErrQuit {
+		log.Panicln(err)
+	}
+}
+
+func layoutSetView(g *gocui.Gui) error {
+	for _, v := range hotkeyViewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value)
+	}
+	for _, v := range infoViewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, "")
+	}
+	for _, v := range inputViewArray {
+		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value)
+	}
+	return nil
 }
 
 func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string) error {
@@ -232,47 +92,89 @@ func setView(g *gocui.Gui, name string, x0, y0, x1, y1 int, value string) error 
 	return nil
 }
 
-func delView_(g *gocui.Gui, name string) error {
-	if err := g.DeleteView(name); err != nil {
-		if err != gocui.ErrUnknownView {
-			panic(err)
-		}
-	}
-	return nil
-}
-
-func layoutSetView(g *gocui.Gui) error {
-	for _, v := range hotkeyViewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, v.value)
-	}
-	for _, v := range infoViewArray {
-		_ = setView(g, v.name, v.x0, v.y0, v.x1, v.y1, "")
-	}
-	return nil
-}
-
-func initKeybindings_(g *gocui.Gui, guiCh chan *gocui.Gui) error {
-	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
-			return err
-		}); err != nil {
-		return err
-	}
-
-	if err := g.SetKeybinding("", gocui.KeyCtrlN, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
-			return newView_(g, guiCh)
-		}); err != nil {
-		return err
-	}
-	if err := g.SetKeybinding("", gocui.KeyCtrlB, gocui.ModNone,
-		func(g *gocui.Gui, v *gocui.View) error {
-			return delNewView_(g, guiCh)
-		}); err != nil {
-		return err
-	}
+func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[byte]string) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlC, gocui.ModNone, quit); err != nil {
 		log.Panicln(err)
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF2, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			if !spMenuActive {
+				return spSelectMenu(g, portCh)
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			if !freqMenuActive {
+				return freqSetMenu(g, chDataSet)
+			}
+			return nil
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF4, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return modeSetMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF5, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return attSetMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF6, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return preampSetMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF7, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return afMinusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF8, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return afPlusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF9, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return rfMinusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF10, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return rfPlusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF11, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return sqlMinusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF12, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return sqlPlusMenu(chDataSet)
+		}); err != nil {
+		return err
 	}
 
 	return nil

@@ -1,4 +1,4 @@
-package newmenu
+package menu
 
 import (
 	"fmt"

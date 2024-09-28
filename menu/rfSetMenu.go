@@ -1,4 +1,4 @@
-package newmenu
+package menu
 
 func rfPlusMenu(chDataSet chan map[byte]string) error {
 	chDataSet <- map[byte]string{

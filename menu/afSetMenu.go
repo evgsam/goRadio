@@ -1,4 +1,4 @@
-package newmenu
+package menu
 
 func afPlusMenu(chDataSet chan map[byte]string) error {
 

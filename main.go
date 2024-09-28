@@ -2,7 +2,7 @@ package main
 
 import (
 	"goRadio/ic78civCmd"
-	newmenu "goRadio/new_menu"
+	"goRadio/menu"
 	"sync"
 	"time"
 
@@ -17,7 +17,7 @@ func main() {
 
 	go ic78civCmd.CivCmdParser(portCh, &serialAccess, chRadioSettings, chSetData)
 
-	newmenu.NewMenu(portCh, chRadioSettings, chSetData)
+	menu.MainMenu(portCh, chRadioSettings, chSetData)
 	for {
 		time.Sleep(10 * time.Second)
 	}

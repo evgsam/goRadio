@@ -1,4 +1,4 @@
-package newmenu
+package menu
 
 func attSetMenu(chDataSet chan map[byte]string) error {
 
