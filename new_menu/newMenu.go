@@ -164,6 +164,19 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[b
 		return err
 	}
 
+	if err := g.SetKeybinding("", gocui.KeyF11, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return sqlMinusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF12, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return sqlPlusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -42,7 +42,7 @@ func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 				} else {
 					level, _ = strconv.ParseUint(val, 10, 32)
 				}
-				setAfRfSql(port, byte(transiverAddr), af, int(level))
+				setAfRfSql(port, byte(transiverAddr), rf, int(level))
 			case byte(sql):
 				if val == "+" {
 					level, _ = strconv.ParseUint(strconv.Itoa(currentSQLLevel+5), 10, 32)
@@ -51,7 +51,7 @@ func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 				} else {
 					level, _ = strconv.ParseUint(val, 10, 32)
 				}
-				setAfRfSql(port, byte(transiverAddr), af, int(level))
+				setAfRfSql(port, byte(transiverAddr), sql, int(level))
 			}
 		}
 		time.Sleep(300 * time.Millisecond)
