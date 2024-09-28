@@ -13,7 +13,14 @@ type signupSpSelect struct {
 	portCh chan serial.Port
 }
 
+func (s *signupSpSelect) close(g *gocui.Gui, v *gocui.View) error {
+	spMenuActive = false
+	s.Close(g, v)
+	return nil
+}
+
 func (s *signupSpSelect) radioRegist(g *gocui.Gui, v *gocui.View) error {
+	spMenuActive = false
 	if !s.Validate() {
 		return nil
 	}
@@ -29,6 +36,7 @@ func (s *signupSpSelect) radioRegist(g *gocui.Gui, v *gocui.View) error {
 }
 
 func spSelectMenu(g *gocui.Gui, portCh chan serial.Port) error {
+	spMenuActive = true
 	signup := &signupSpSelect{
 		component.NewForm(g, "Select Port", 0, 0, 0, 0), portCh,
 	}
@@ -37,7 +45,7 @@ func spSelectMenu(g *gocui.Gui, portCh chan serial.Port) error {
 		SetMode(component.VerticalMode).
 		AddOptions(serialDataExchange.GetSerialPortList()...)
 	signup.AddButton("Ok", signup.radioRegist)
-	signup.AddButton("Cancel", signup.Close)
+	signup.AddButton("Cancel", signup.close)
 	signup.Draw()
 	return nil
 }

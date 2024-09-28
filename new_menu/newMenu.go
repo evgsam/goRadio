@@ -14,10 +14,6 @@ const (
 	F3_title = "F3 Enter freque"
 )
 
-//=================================================================
-
-//================================================================
-
 func viewArrayFilling() {
 	hotkeyViewArray = []viewsStruct{
 		{name: "Hotkey for change settings", x0: 0, y0: 0, x1: 50, y1: 7},
@@ -59,9 +55,7 @@ func NewMenu(portCh chan serial.Port, chRadioSettings chan map[byte]string, chDa
 		log.Panicln(err)
 	}
 	defer g.Close()
-
 	viewArrayFilling()
-
 	g.SetManagerFunc(layoutSetView)
 
 	go dataToDisplay(g, chRadioSettings)
@@ -105,14 +99,20 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[b
 
 	if err := g.SetKeybinding("", gocui.KeyF2, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return spSelectMenu(g, portCh)
+			if !spMenuActive {
+				return spSelectMenu(g, portCh)
+			}
+			return nil
 		}); err != nil {
 		return err
 	}
 
 	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
-			return freqSetMenu(g, chDataSet)
+			if !freqMenuActive {
+				return freqSetMenu(g, chDataSet)
+			}
+			return nil
 		}); err != nil {
 		return err
 	}

@@ -20,6 +20,8 @@ var (
 	infoViewArray   = make([]viewsStruct, 0)
 	hotkeyViewArray = make([]viewsStruct, 0)
 	inputViewArray  = make([]viewsStruct, 0)
+	spMenuActive    bool
+	freqMenuActive  bool
 )
 
 type viewsStruct struct {
