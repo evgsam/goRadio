@@ -11,7 +11,7 @@ import (
 
 func main() {
 	chRadioSettings := make(chan map[byte]string, 30)
-	chSetData := make(chan map[byte]string, 10)
+	chSetData := make(chan map[byte]string, 30)
 	var serialAccess sync.Mutex
 	portCh := make(chan serial.Port)
 
