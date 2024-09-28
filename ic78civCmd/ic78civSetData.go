@@ -11,6 +11,7 @@ import (
 
 func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 	transiverAddr := 0x62
+	var level uint64
 	for {
 		m := <-ch
 		for key, val := range m {
@@ -25,13 +26,31 @@ func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 				freq, _ := strconv.ParseUint(val, 10, 32)
 				setFreque(port, byte(transiverAddr), int(freq))
 			case byte(af):
-				level, _ := strconv.ParseUint(val, 10, 32)
+				if val == "+" {
+					level, _ = strconv.ParseUint(strconv.Itoa(currentAFLevel+5), 10, 32)
+				} else if val == "-" {
+					level, _ = strconv.ParseUint(strconv.Itoa(currentAFLevel-5), 10, 32)
+				} else {
+					level, _ = strconv.ParseUint(val, 10, 32)
+				}
 				setAfRfSql(port, byte(transiverAddr), af, int(level))
 			case byte(rf):
-				level, _ := strconv.ParseUint(val, 10, 32)
+				if val == "+" {
+					level, _ = strconv.ParseUint(strconv.Itoa(currentRFLevel+5), 10, 32)
+				} else if val == "-" {
+					level, _ = strconv.ParseUint(strconv.Itoa(currentRFLevel-5), 10, 32)
+				} else {
+					level, _ = strconv.ParseUint(val, 10, 32)
+				}
 				setAfRfSql(port, byte(transiverAddr), af, int(level))
 			case byte(sql):
-				level, _ := strconv.ParseUint(val, 10, 32)
+				if val == "+" {
+					level, _ = strconv.ParseUint(strconv.Itoa(currentSQLLevel+5), 10, 32)
+				} else if val == "-" {
+					level, _ = strconv.ParseUint(strconv.Itoa(currentSQLLevel-5), 10, 32)
+				} else {
+					level, _ = strconv.ParseUint(val, 10, 32)
+				}
 				setAfRfSql(port, byte(transiverAddr), af, int(level))
 			}
 		}
@@ -41,6 +60,9 @@ func IC78civCmdSet(port serial.Port, ch chan map[byte]string) {
 }
 
 func setAfRfSql(port serial.Port, trAddr byte, c commandName, level int) error {
+	if level > 254 {
+		level = 254
+	}
 	levelBuf := intToArr((level*255)/100, 4)
 	for len(levelBuf) < 4 {
 		levelBuf = addElementToFirstIndex(levelBuf, 0)

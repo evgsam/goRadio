@@ -138,6 +138,32 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[b
 		return err
 	}
 
+	if err := g.SetKeybinding("", gocui.KeyF7, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return afMinusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF8, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return afPlusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
+	if err := g.SetKeybinding("", gocui.KeyF9, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return rfMinusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF10, gocui.ModNone,
+		func(g *gocui.Gui, v *gocui.View) error {
+			return rfPlusMenu(chDataSet)
+		}); err != nil {
+		return err
+	}
+
 	return nil
 }
 

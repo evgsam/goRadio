@@ -4,6 +4,7 @@ import (
 	"fmt"
 	datastruct "goRadio/dataStruct"
 	"goRadio/serialDataExchange"
+	"strconv"
 	"sync"
 	"time"
 
@@ -23,6 +24,9 @@ var (
 	currentMode     byte
 	currentAtt      byte
 	currentPreamp   byte
+	currentAFLevel  int
+	currentRFLevel  int
+	currentSQLLevel int
 )
 
 func dataRequest(port serial.Port, myic78civCommand *civCommand) {
@@ -100,7 +104,7 @@ func switchATT(data byte) string {
 }
 
 func detectionAFRFSQL(buffer []byte) string {
-	return fmt.Sprintf("%d%%", (bcdToInt(buffer)*100)/254)
+	return fmt.Sprintf("%d", (bcdToInt(buffer)*100)/254)
 }
 
 func detectionFreque(buffer []byte) string {
@@ -156,14 +160,19 @@ func parser(buffer []byte, ch chan map[byte]string) {
 	case byte(afrfsqlCmd):
 		switch buffer[1] {
 		case byte(afSubCmd):
+			t := detectionAFRFSQL(buffer[2:4])
+			currentAFLevel, _ = strconv.Atoi(t)
 			ch <- map[byte]string{
 				byte(af): detectionAFRFSQL(buffer[2:4]),
 			}
 		case byte(rfSubCmd):
+			t := detectionAFRFSQL(buffer[2:4])
+			currentRFLevel, _ = strconv.Atoi(t)
 			ch <- map[byte]string{
 				byte(rf): detectionAFRFSQL(buffer[2:4]),
 			}
 		case byte(sqlSubCmd):
+			currentSQLLevel, _ = strconv.Atoi(detectionAFRFSQL(buffer[2:4]))
 			ch <- map[byte]string{
 				byte(sql): detectionAFRFSQL(buffer[2:4]),
 			}
