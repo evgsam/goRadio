@@ -22,18 +22,18 @@ func viewArrayFilling() {
 	hotkeyViewArray = []viewsStruct{
 		{name: "Hotkey for change settings", x0: 0, y0: 0, x1: 50, y1: 7},
 		{name: "F1", x0: 1, y0: 1, x1: 8, y1: 3, value: "help"},
-		{name: "F2", x0: 9, y0: 1, x1: 16, y1: 3, value: "s.port"},
-		{name: "F3", x0: 17, y0: 1, x1: 24, y1: 3, value: "freque"},
-		{name: "F4", x0: 25, y0: 1, x1: 32, y1: 3, value: "mode"},
-		{name: "F5", x0: 33, y0: 1, x1: 40, y1: 3, value: "ATT"},
-		{name: "F6", x0: 41, y0: 1, x1: 48, y1: 3, value: "preamp"},
+		{name: "S", x0: 9, y0: 1, x1: 16, y1: 3, value: "s.port"},
+		{name: "F", x0: 17, y0: 1, x1: 24, y1: 3, value: "freque"},
+		{name: "M", x0: 25, y0: 1, x1: 32, y1: 3, value: "mode"},
+		{name: "A", x0: 33, y0: 1, x1: 40, y1: 3, value: "ATT"},
+		{name: "P", x0: 41, y0: 1, x1: 48, y1: 3, value: "preamp"},
 
-		{name: "F7", x0: 1, y0: 4, x1: 8, y1: 6, value: "AF-"},
-		{name: "F8", x0: 9, y0: 4, x1: 16, y1: 6, value: "AF+"},
-		{name: "F9", x0: 17, y0: 4, x1: 24, y1: 6, value: "RF-"},
-		{name: "F10", x0: 25, y0: 4, x1: 32, y1: 6, value: "RF+"},
-		{name: "F11", x0: 33, y0: 4, x1: 40, y1: 6, value: "SQL-"},
-		{name: "F12", x0: 41, y0: 4, x1: 48, y1: 6, value: "SQL+"},
+		{name: "Q", x0: 1, y0: 4, x1: 8, y1: 6, value: "AF-"},
+		{name: "W", x0: 9, y0: 4, x1: 16, y1: 6, value: "AF+"},
+		{name: "E", x0: 17, y0: 4, x1: 24, y1: 6, value: "RF-"},
+		{name: "R", x0: 25, y0: 4, x1: 32, y1: 6, value: "RF+"},
+		{name: "Z", x0: 33, y0: 4, x1: 40, y1: 6, value: "SQL-"},
+		{name: "X", x0: 41, y0: 4, x1: 48, y1: 6, value: "SQL+"},
 	}
 
 	infoViewArray = []viewsStruct{
@@ -101,7 +101,7 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[b
 		log.Panicln(err)
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF2, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlS, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			if !spMenuActive {
 				return spSelectMenu(g, portCh)
@@ -111,7 +111,7 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[b
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF3, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlF, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			if !freqMenuActive {
 				return freqSetMenu(g, chDataSet)
@@ -121,60 +121,60 @@ func initKeybindings(g *gocui.Gui, portCh chan serial.Port, chDataSet chan map[b
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF4, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlM, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return modeSetMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF5, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlA, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return attSetMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF6, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlP, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return preampSetMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF7, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlQ, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return afMinusMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyF8, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlW, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return afPlusMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF9, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlE, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return rfMinusMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyF10, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlR, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return rfPlusMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
 
-	if err := g.SetKeybinding("", gocui.KeyF11, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlZ, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return sqlMinusMenu(chDataSet)
 		}); err != nil {
 		return err
 	}
-	if err := g.SetKeybinding("", gocui.KeyF12, gocui.ModNone,
+	if err := g.SetKeybinding("", gocui.KeyCtrlX, gocui.ModNone,
 		func(g *gocui.Gui, v *gocui.View) error {
 			return sqlPlusMenu(chDataSet)
 		}); err != nil {
